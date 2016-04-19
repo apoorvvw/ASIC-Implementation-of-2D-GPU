@@ -12,16 +12,16 @@ module fifo
     input wire n_rst,
     input wire r_enable,
     input wire w_enable,
-    input wire [100:0]w_data,
-    output reg [100:0]r_data,
+    input wire [82:0]w_data,
+    output reg [82:0]r_data,
     output wire empty,
     output wire full
 
 );
-    reg [100:0]data1, next_data1;
-    reg [100:0]data2, next_data2;    
-    reg [100:0]data3, next_data3;
-    reg [100:0]data4, next_data4;
+    reg [82:0]data1, next_data1;
+    reg [82:0]data2, next_data2;    
+    reg [82:0]data3, next_data3;
+    reg [82:0]data4, next_data4;
     reg [2:0] r_pointer, next_r_pointer;
     reg [2:0] w_pointer, next_w_pointer;
 
@@ -105,7 +105,7 @@ module fifo
   end 
   
 
-  assign full = (w_pointer == 3'b100 && w_enable == 1)
+  assign full = (w_pointer == 3'b82 && w_enable == 1)
   assign empty = (next_data1 == '0) 
 
 endmodule
