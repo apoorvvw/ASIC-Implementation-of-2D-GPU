@@ -11,6 +11,11 @@ module Bresenham_Controller
 	input logic draw_done,
 	input logic vertice_num,
 	input logic bla_en,
+	input logic coordinates[47:0],
+	output logic x0[7:0],
+	output logic y0[7:0],
+	output logic x1[7:0],
+	output logic y1[7:0],
 	output logic draw_en,
 	output logic bla_done
 );
@@ -27,11 +32,19 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 	begin
 		draw_en = 1'b0;
 		bla_done = 1'b0;
+		x0 = '0;
+		y0 = '0;
+		x1 = '0;
+		y1 = '0;
 		next_state = state;
 		case (state)
 		IDLE: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			x0 = '0;
+			y0 = '0;
+			x1 = '0;
+			y1 = '0;
 			if(bla_en == 1'b1 && vertice_num == 1'b1)
 				next_state = DRAW3_1;
 			else if(bla_en == 1'b1 && vertice_num == 1'b0)
@@ -42,6 +55,10 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		DRAW2: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
+			x0 = coordinates[7:0];
+			y0 = coordinates[15:8];
+			x1 = coordinates[23:16];
+			y1 = coordinates[31:24];
 			if(draw_done == 1'b1)
 				next_state = WAIT2;
 			else
@@ -50,11 +67,19 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		WAIT2: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			x0 = '0;
+			y0 = '0;
+			x1 = '0;
+			y1 = '0;
 			next_state = DONE;
 		end
 		DRAW3_1: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
+			x0 = coordinates[7:0];
+			y0 = coordinates[15:8];
+			x1 = coordinates[23:16];
+			y1 = coordinates[31:24];
 			if(draw_done == 1'b1)
 				next_state = WAIT3_1;
 			else
@@ -63,11 +88,19 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		WAIT3_1: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			x0 = '0;
+			y0 = '0;
+			x1 = '0;
+			y1 = '0;
 			next_state = DRAW3_2;
 		end
 		DRAW3_2: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
+			x0 = coordinates[7:0];
+			y0 = coordinates[15:8];
+			x1 = coordinates[39:32];
+			y1 = coordinates[47:40];
 			if(draw_done == 1'b1)
 				next_state = WAIT3_2;
 			else
@@ -76,11 +109,19 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		WAIT3_2: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			x0 = '0;
+			y0 = '0;
+			x1 = '0;
+			y1 = '0;
 			next_state = DRAW3_3;
 		end
 		DRAW3_3: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
+			x0 = coordinates[23:16];
+			y0 = coordinates[31:24];
+			x1 = coordinates[39:32];
+			y1 = coordinates[47:40];
 			if(draw_done == 1'b1)
 				next_state = DONE;
 			else
@@ -89,11 +130,19 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		DONE: begin
 			draw_en = 1'b0;
 			bla_done = 1'b1;
+			x0 = '0;
+			y0 = '0;
+			x1 = '0;
+			y1 = '0;
 			next_state = DONE_WAIT;		
 		end
 		DONE_WAIT: begin
 			draw_en = 1'b0;
 			bla_done = 1;b0;
+			x0 = '0;
+			y0 = '0;
+			x1 = '0;
+			y1 = '0;
 			next_state = IDLE;		
 		end
 		endcase
