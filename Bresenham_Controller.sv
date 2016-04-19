@@ -138,7 +138,7 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		end
 		DONE_WAIT: begin
 			draw_en = 1'b0;
-			bla_done = 1;b0;
+			bla_done = 1'b0;
 			x0 = '0;
 			y0 = '0;
 			x1 = '0;
