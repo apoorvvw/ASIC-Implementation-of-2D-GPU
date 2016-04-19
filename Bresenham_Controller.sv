@@ -9,7 +9,7 @@
 module Bresenham_Controller
 (
 	input logic draw_done,
-	input logic shape_code,
+	input logic vertice_num,
 	input logic bla_en,
 	output logic draw_en,
 	output logic bla_done
@@ -32,9 +32,9 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		IDLE: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
-			if(bla_en == 1'b1 && shape_code == 1'b1)
+			if(bla_en == 1'b1 && vertice_num == 1'b1)
 				next_state = DRAW3_1;
-			else if(bla_en == 1'b1 && shape_code == 1'b0)
+			else if(bla_en == 1'b1 && vertice_num == 1'b0)
 				next_state = DRAW2;
 			else
 				next_state = IDLE;
