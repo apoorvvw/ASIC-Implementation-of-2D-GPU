@@ -21,7 +21,7 @@ module main_controller
 	output reg draw_en,
 	output reg config_en
 );
-typedef enum logic [3:0] {IDLE, CONFIG, DECODE, DEC&DRAW, DRAW, ALPHA} 
+typedef enum logic [3:0] {IDLE, CONFIG, DECODE, DEC_DRAW, DRAW, ALPHA} 
 	state_type;
 	state_type state, next_state;
 	always_ff @ (posedge clk, negedge n_rst)
@@ -61,13 +61,13 @@ typedef enum logic [3:0] {IDLE, CONFIG, DECODE, DEC&DRAW, DRAW, ALPHA}
 			draw_en = 1'b0;
 			alpha_en = 1'b0;
 			if(decode_fin == 1'b1 && fifo_empty == 1'b0)
-				next_state = DEC&DRAW;
+				next_state = DEC_DRAW;
 			else if(decode_fin == 1'b1 && fifo_empty == 1'b1)
 				next_state = DRAW;
 			else if(inst_type == 1'b1) //Alpha instruction
 				next_state = ALPHA;
 		end
-		DEC&DRAW: begin
+		DEC_DRAW: begin
 			config_en = 1'b0;
 			decode_en = 1'b1;
 			draw_en = 1'b1;
