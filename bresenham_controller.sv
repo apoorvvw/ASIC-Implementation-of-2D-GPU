@@ -19,8 +19,8 @@ module bresenham_controller
 	output logic [7:0] y0,
 	output logic [7:0] x1,
 	output logic [7:0] y1,
-	output logic [7:0] draw_en,
-	output logic [7:0] bla_done
+	output logic draw_en,
+	output logic bla_done
 );
 	typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, WAIT3_1, WAIT3_2, DONE_WAIT} state_type;
 	state_type state, next_state;
