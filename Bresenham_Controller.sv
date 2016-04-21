@@ -8,6 +8,8 @@
 
 module Bresenham_Controller
 (
+	input logic clk,
+	input logic n_rst,
 	input logic draw_done,
 	input logic vertice_num,
 	input logic bla_en,
