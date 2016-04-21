@@ -44,36 +44,111 @@ module tb_bresenham_controller ();
 	end
 
     initial
-    begin
-    	@(negedge tb_clk);
-    	#(CLK_PERIOD)
+	begin
+		//Test case 1
+		tb_bla_en = 1'b1;
+		tb_vertice_num = 1'b1;
+		@(negedge tb_clk);
+		tb_n_rst = 1'b0;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
 
-    	tb_draw_done = 1'b0;
-    	tb_vertice_num = 1'b0;
-    	tb_bla_en = 1'b0;
-    	tb_coordinates = 48'h000000;
-    	#(CLK_PERIOD)
-    	#(CLK_PERIOD)
-    	#(CLK_PERIOD)
-		tb_draw_done = 1'b0;
-    	tb_vertice_num = 1'b0;
-    	tb_bla_en = 1'b0;
-    	tb_coordinates = 48'h000000;
+		//Test case 2
+		tb_bla_en = 1'b1;
+		tb_vertice_num = 1'b0;
+		@(negedge tb_clk);
+		tb_n_rst = 1'b0;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
 
-    	// Should stay in IDLE
-    	#(CLK_PERIOD)
-    	tb_draw_done = 1'b0;
-    	tb_vertice_num = 1'b0;
-    	tb_bla_en = 1'b0;
-    	tb_coordinates = 48'h000000;    	
+		//Test case 3
+		tb_bla_en = 1'b1;
+		tb_vertice_num = 1'b0;
+		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		@(negedge tb_clk);
+		if(draw_en == 1'b0)
+			$error("Not in draw state");
+		else
+			$info("In draw state");
+		if(x0 == 8'b00000000 && y0 == 8'b00000000 && x1 == 8'b11111111 && y1 == 8'b11111111)
+			$info("Values good"):
+		else
+			$error("Values are wrong");
+		tb_n_rst = 1'b0;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
 
-    	// Go to DRAW2
-    	#(CLK_PERIOD)
-    	tb_draw_done = 1'b0;
-    	tb_vertice_num = 1'b0;
-    	tb_bla_en = 1'b1;
-    	tb_coordinates = 48'h000000;    	
-
-
-    end
+		//Test case 4
+		tb_bla_en = 1'b1;
+		tb_vertice_num = 1'b0;
+		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		@(negedge tb_clk);
+		tb_draw_done = 1'b1;
+		@(negedge tb_clk);
+		if(draw_en == 1'b0 && bla_done == 1'b0 && x0 == 8'd0 && y0 == 8'd0 && x1 == 8'd0 && y1 == 8'b0)
+			$info("In wait state");
+		else
+			$error("Not in wait state");
+		tb_n_rst = 1'b0;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		
+		//Test case 5
+		tb_bla_en = 1'b1;
+		tb_vertice_num = 1'b0;
+		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		@(negedge tb_clk);
+		tb_draw_done = 1'b1;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		if(draw_en == 1'b0 && bla_done == 1'b1 && x0 == 8'd0 && y0 == 8'd0 && x1 == 8'd0 && y1 == 8'b0)
+			$info("In done state");
+		else
+			$error("Not in done state");
+		tb_n_rst = 1'b0;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		
+		//Test case 6
+		tb_bla_en = 1'b1;
+		tb_vertice_num = 1'b0;
+		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		@(negedge tb_clk);
+		tb_draw_done = 1'b1;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		if(draw_en == 1'b0 && bla_done == 1'b0 && x0 == 8'd0 && y0 == 8'd0 && x1 == 8'd0 && y1 == 8'b0)
+			$info("In done wait state");
+		else
+			$error("Not in done wait state");
+		tb_n_rst = 1'b0;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		
+		//Test case 7
+		tb_bla_en = 1'b1;
+		tb_vertice_num = 1'b0;
+		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		@(negedge tb_clk);
+		tb_draw_done = 1'b1;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		if(draw_en == 1'b0 && bla_done == 1'b0 && x0 == 8'd0 && y0 == 8'd0 && x1 == 8'd0 && y1 == 8'b0)
+			$info("In idle state");
+		else
+			$error("Not in idle state");
+		tb_n_rst = 1'b0;
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+		@(negedge tb_clk);
+	end
 endmodule
