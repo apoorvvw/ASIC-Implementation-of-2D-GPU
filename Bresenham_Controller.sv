@@ -6,22 +6,23 @@
 // Version:     1.0  Initial Design Entry
 // Description: Decode Block for Decoding instructions
 
-module Bresenham_Controller
+module bresenham_controller
 (
 	input logic clk,
 	input logic n_rst,
 	input logic draw_done,
 	input logic vertice_num,
 	input logic bla_en,
-	input logic coordinates[47:0],
-	output logic x0[7:0],
-	output logic y0[7:0],
-	output logic x1[7:0],
-	output logic y1[7:0],
-	output logic draw_en,
-	output logic bla_done
+	input logic [47:0]coordinates,
+	
+	output logic [7:0] x0,
+	output logic [7:0] y0,
+	output logic [7:0] x1,
+	output logic [7:0] y1,
+	output logic [7:0] draw_en,
+	output logic [7:0] bla_done
 );
-typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, WAIT3_1, WAIT3_2, DONE_WAIT};
+	typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, WAIT3_1, WAIT3_2, DONE_WAIT} state_type;
 	state_type state, next_state;
 	always_ff @ (posedge clk, negedge n_rst)
 	begin
@@ -30,6 +31,7 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		else
 			state <= next_state;	    
 	end
+
 	always_comb
 	begin
 		draw_en = 1'b0;
@@ -57,7 +59,7 @@ typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, W
 		DRAW2: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
-			x0 = coordinates[7:0];
+			x0 = {coordinates[7:0]};
 			y0 = coordinates[15:8];
 			x1 = coordinates[23:16];
 			y1 = coordinates[31:24];
