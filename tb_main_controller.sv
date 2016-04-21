@@ -7,17 +7,17 @@
 // Description: Test bench for bresenham internal FSM
 `timescale 1ns / 100ps
 
-module tb_bresenham_controller ();
+module tb_main_controller ();
 
 	localparam CLK_PERIOD = 2.5;
 	localparam NUM_CNT_BITS = 4;
 	logic tb_clk;
 	logic tb_n_rst;
-	logic tb_decode_fin;
+//	logic tb_decode_fin;
 	logic tb_inst_type;
-	logic tb_alpha_fin;
+	logic tb_alpha_done;
 	logic tb_fifo_empty;
-	logic tb_bla_fin;
+	logic tb_bla_done;
 	logic tb_config_in;
 	logic tb_config_done;
 	logic tb_fill_done;
@@ -31,15 +31,15 @@ module tb_bresenham_controller ();
 	(
 		.clk(tb_clk), 
 		.n_rst(tb_n_rst), 
-		.decode_fin(tb_draw_done),
+//		.decode_fin(tb_decode_done),
 		.inst_type(tb_inst_type),
-		.alpha_fin(tb_alpha_fin), 
+		.alpha_done(tb_alpha_done), 
 		.fifo_empty(tb_fifo_empty),
-		.bla_fin(tb_bla_fin),
+		.bla_done(tb_bla_done),
 		.config_in(tb_config_in),
 	        .config_done(tb_config_done),
 		.fill_done(tb_fill_done),
-		.decode_full(tb_decode_full),
+//		.decode_full(tb_decode_full),
 		.read_en(tb_read_en),
 		.alpha_en(tb_alpha_en),
 		.bla_en(tb_bla_en), 
@@ -59,12 +59,12 @@ module tb_bresenham_controller ();
 	end
 	initial
 	begin
-
-		tb_decode_fin = 1'b0;
+		tb_n_rst = 1'b1;
+		//tb_decode_done = 1'b0;
 		tb_inst_type = 1'b0;
-		tb_alpha_fin = 1'b0;
+		tb_alpha_done = 1'b0;
 		tb_fifo_empty = 1'b0;
-		tb_bla_fin = 1'b0;
+		tb_bla_done = 1'b0;
 		tb_config_in = 1'b0;
 		tb_config_done = 1'b0;
 		tb_fill_done = 1'b0;
@@ -73,11 +73,11 @@ module tb_bresenham_controller ();
 		#(CLK_PERIOD)
 
 		#(CLK_PERIOD)
-		tb_decode_fin = 1'b0;
+		//tb_decode_done = 1'b0;
 		tb_inst_type = 1'b0;
-		tb_alpha_fin = 1'b0;
+		tb_alpha_done = 1'b0;
 		tb_fifo_empty = 1'b0;
-		tb_bla_fin = 1'b0;
+		tb_bla_done = 1'b0;
 		tb_config_in = 1'b0;
 		tb_config_done = 1'b0;
 		tb_fill_done = 1'b0;
@@ -94,10 +94,61 @@ module tb_bresenham_controller ();
 		#(CLK_PERIOD)
 
 		//WAIT_CONFIG TO DECODE
-		#(CLK_PERIOD)
 		tb_config_done = 1'b0;
-		tb_bla_fin = 1'b1;
+		#(CLK_PERIOD)
+		
 		//DECODE TO BLA
+		tb_inst_type = 1'b0;
+		#(CLK_PERIOD)
+
+		//wait in BLA test
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+
+		//BLA to WAIT_BLA
+		tb_bla_done = 1'b1;
+		#(CLK_PERIOD)
+		
+		//WAIT_BLA to FILL
+		tb_bla_done = 1'b0;
+		#(CLK_PERIOD)
+		
+		//stay in fill test
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		
+		//FILL to WAIT_FILL
+		tb_fill_done = 1'b1;
+		#(CLK_PERIOD)
+		
+		//stay in wait fill
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		
+		//WAIT_FILL to DECODE
+		tb_fifo_empty = 1'b0;
+		#(CLK_PERIOD)
+		
+		//DECODE to ALPHA
+		tb_inst_type = 1'b1;
+		#(CLK_PERIOD)
+		
+		//stay in alpha
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		
+		//ALPHA to WAIT_ALPHA
+		tb_alpha_done = 1'b1;
+		#(CLK_PERIOD)
+		
+		//WAIT_ALPHA to IDLE
+		tb_alpha_done = 1'b0;
+		#(CLK_PERIOD)
+		
+		//IDLE
+		if(tb_read_en == 1'b0 && tb_alpha_en == 1'b0 && tb_bla_en == 1'b0 && tb_config_en == 1'b0 && tb_fill_en == 1'b0)
+			$info("In IDLE!");
+		else
+			$error("Not in IDLE");
 	end
 endmodule
-
