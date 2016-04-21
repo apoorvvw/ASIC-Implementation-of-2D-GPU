@@ -16,6 +16,7 @@ module tb_bresenham_controller ();
     reg tb_n_rst;
     reg tb_draw_done;
     reg tb_vertice_num;
+    logic tb_bla_en;
     logic [47:0] tb_coordinates;
     logic [7:0] tb_x0;
 	logic [7:0] tb_y0;
@@ -26,39 +27,12 @@ module tb_bresenham_controller ();
 
 	integer tb_test_case;
 
-    bresenham_controller DUT ( .clk(tb_clk) , .n_rst(tb_n_rst) , 
-    						   .draw_done(tb_draw_done), .vertice_num(tb_vertice_num), 
-    						   .bla_en(tb_bla_en), .coordinates (tb_coordinates) , .x0(tb_x0)
-    						   .y0(tb_y0) , .x1(tb_x1) , .y1(tb_y1) , .draw_en(tb_draw_en) , 
-    						   .bla_done(tb_bla_done) );    
+    bresenham_controller DUT ( .clk(tb_clk) , .n_rst(tb_n_rst) , .draw_done(tb_draw_done), 
+                                .vertice_num(tb_vertice_num), .bla_en(tb_bla_en), .coordinates (tb_coordinates) , 
+                                .x0(tb_x0) , .y0(tb_y0) , .x1(tb_x1) , .y1(tb_y1) , .draw_en(tb_draw_en) , 
+                                .bla_done(tb_bla_done) );    
 
     // Tasks for regulating the timing of input stimulus to the design
-    task send_packet;
-        input  [7:0] data;
-        input  stop_bit;
-        input  time data_period;
-        
-        integer i;
-    begin
-        // First synchronize to away from clock's rising edge
-        @(negedge tb_clk)
-        
-        // Send start bit
-        tb_serial_in = 1'b0;
-        #data_period;
-        
-        // Send data bits
-        for(i = 0; i < 8; i = i + 1)
-        begin
-            tb_serial_in = data[i];
-            #data_period;
-        end
-        
-        // Send stop bit
-        tb_serial_in = stop_bit;
-        #data_period;
-    end
-    endtask
 
     // Clock generation block
 	always
