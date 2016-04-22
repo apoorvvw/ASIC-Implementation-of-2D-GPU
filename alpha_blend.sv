@@ -8,6 +8,8 @@
 
 module alpha_blending
 (
+    input wire clk,
+    input wire n_rst,
     input wire pixel_ready,
     input wire [7:0]color1,
     input wire [7:0]color2,
@@ -16,14 +18,18 @@ module alpha_blending
     output reg [7:0]alpha_result
 ); 
     reg nextpixeldone;
-    always_ff @ (posedge clk)
+    always_ff @ (posedge clk,negedge n_rst)
 	begin
-      	if(pixel_ready == 0) begin
-	   		pixel_done <= 0;
-       	end
-       	else begin
-	   		pixel_done <= nextpixeldone;
-       end
+	    if(n_rst == 0) begin
+            pixel_done <= 0;
+        end else begin
+      		if(pixel_ready == 0) begin
+	   			pixel_done <= 0;
+       		end
+       		else begin
+	   			pixel_done <= nextpixeldone;
+       		end
+		end
     end
 
     wire [3:0]inv_alp;
