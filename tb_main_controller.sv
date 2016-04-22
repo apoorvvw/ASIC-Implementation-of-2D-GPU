@@ -59,7 +59,10 @@ module tb_main_controller ();
 	end
 	initial
 	begin
+		tb_n_rst = 1'b0;
+		#(CLK_PERIOD)
 		tb_n_rst = 1'b1;
+		#(CLK_PERIOD)
 		//tb_decode_done = 1'b0;
 		tb_inst_type = 1'b0;
 		tb_alpha_done = 1'b0;
@@ -150,5 +153,6 @@ module tb_main_controller ();
 			$info("In IDLE!");
 		else
 			$error("Not in IDLE");
+		tb_n_rst = 1'b0;
 	end
 endmodule
