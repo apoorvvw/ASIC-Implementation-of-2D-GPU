@@ -9,6 +9,8 @@
 
 module alpha_controller
 (
+    input wire clk,
+    input wire n_rst,
     input wire alpha_en,
     input wire pixel_done,
     input wire read_done,
