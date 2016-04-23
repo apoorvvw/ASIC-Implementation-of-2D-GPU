@@ -27,7 +27,6 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	IDLE: 
 	begin
 		math_start = 1'b0;
-		fill_start = 1'b0;
 		row_start = 1'b0;
 		fill_start = 1'b0;
 		done = 1'b0;
@@ -39,7 +38,6 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	MATH:
 	begin
 		math_start = 1'b1;
-		fill_start = 1'b0;
 		row_start = 1'b1;
 		fill_start = 1'b0;
 		done = 1'b0;
@@ -51,7 +49,6 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	MATH_WAIT:
 	begin
 		math_start = 1'b0;
-		fill_start = 1'b0;
 		row_start = 1'b0;
 		fill_start = 1'b0;
 		done = 1'b0;
@@ -60,7 +57,6 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	GETROW:
 	begin
 		math_start = 1'b0;
-		fill_start = 1'b0;
 		row_start = 1'b1;
 		fill_start = 1'b0;
 		done = 1'b0;
@@ -72,7 +68,6 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	ROW_WAIT:
 	begin
 		math_start = 1'b0;
-		fill_start = 1'b0;
 		row_start = 1'b0;
 		fill_start = 1'b0;
 		done = 1'b0;
@@ -81,7 +76,6 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	FILL:
 	begin
 		math_start = 1'b0;
-		fill_start = 1'b0;
 		row_start = 1'b0;
 		fill_start = 1'b1;
 		done = 1'b0;
@@ -93,7 +87,6 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	FILL_WAIT:
 	begin
 		math_start = 1'b0;
-		fill_start = 1'b0;
 		row_start = 1'b0;
 		fill_start = 1'b0;
 		done = 1'b0;
@@ -102,7 +95,6 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	DONE:
 	begin
 		math_start = 1'b0;
-		fill_start = 1'b0;
 		row_start = 1'b0;
 		fill_start = 1'b0;
 		done = 1'b1;
