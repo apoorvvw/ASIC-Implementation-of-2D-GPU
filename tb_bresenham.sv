@@ -1,3 +1,12 @@
+// $Id: $
+// File name:   tb_bresenham.sv
+// Created:     4/23/2016
+// Author:      Pooja Kale
+// Lab Section: 04
+// Version:     1.0  Initial Design Entry
+// Description: Test Bench
+
+
 `timescale 1ns / 100ps
 
 module tb_bresenham();
@@ -18,6 +27,7 @@ module tb_bresenham();
 	logic [4159:0] tb_line_buffer;
 	logic tb_done;
 	
+
 	bresenham BH
 	(
 		.clk(tb_clk),
@@ -39,13 +49,45 @@ module tb_bresenham();
 		tb_clk = 1'b1;
 		#(CLK_PERIOD/2.0);
 	end
-
+	integer i;
 	initial
 	begin
+		tb_n_rst = 0 ;
+		tb_x0 = 8'b00010000; 
+		tb_y0 = 8'b00010000; 
+		tb_x1 = 8'b01000000; 
+		tb_y1 = 8'b01000000;  
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		tb_n_rst = 1;  
+		tb_start = 1; 
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+
+		i = 1'b1;
+		
+		
+		
 		
 	end
 
 endmodule
-		
-	
-	
