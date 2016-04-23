@@ -1,17 +1,19 @@
-// $Id: $ 007
+// $Id: $
 // File name:   bresenham.sv
-// Created:     4/19/2016
-// Author:      Apoorv Wairagade
-// Lab Section: 337-04
+// Created:     4/23/2016
+// Author:      Pooja Kale
+// Lab Section: 04
 // Version:     1.0  Initial Design Entry
-// Description: Draws line segments
+// Description: Bresenham
+
+
 module bresenham(
 	input wire clk,
 	input wire n_rst,
-	input wire x0,
-	input wire y0,
-	input wire x1,
-	input wire y1,
+	input wire [7:0] x0,
+	input wire [7:0] y0,
+	input wire [7:0] x1,
+	input wire [7:0] y1,
 	input wire start,
 
 	output reg x, 
@@ -22,23 +24,23 @@ module bresenham(
 
 	//Variable declarations
 
-	logic [5:0] signed initialP; 
+	logic signed [7:0]  initialP; 
 
-	logic [5:0] signed deltaY;
-	logic [5:0] signed deltaX; 
-	logic [5:0] signed positiveIncrement; 
-	logic [5:0] signed negativeIncrement;
+	logic signed [7:0]  deltaY;
+	logic signed [7:0]  deltaX; 
+	logic signed [7:0]  positiveIncrement; 
+	logic signed [7:0]  negativeIncrement;
 
-	logic [5:0] currentX; 
-	logic [5:0] nextX; 
+	logic [7:0] currentX; 
+	logic [7:0] nextX; 
 	
-	logic [5:0] currentY; 
-	logic [5:0] nextY; 
+	logic [7:0] currentY; 
+	logic [7:0] nextY; 
 	
-	logic [5:0] signed currentP; 
-	logic [5:0] signed nextP;
+	logic signed [7:0]  currentP; 
+	logic signed [7:0]  nextP;
 
-	typedef enum logic [1:0] {IDLE , PROCESS , DONE } state_type;
+	typedef enum logic [1:0] {IDLE, PROCESS, DONE } state_type;
 	state_type next_state , current_state;
 
 	//DataFlow
@@ -67,57 +69,67 @@ module bresenham(
 	end
 
     always_comb begin:	NEXT_STATE_LOGIC
-
+		
+		next_state = current_state;
+		nextP = currentP;
+		nextX = currentX;
+		nextY = currentY;
 		case(current_state)
 		
-			IDLE: 
-			begin
+			IDLE: begin
+				//currentP = initialP;
+				//currentX = x0;
+				//currentY = y0;
 				
 				if (start)
 					next_state = PROCESS;
 
-				currentP = initialP;
-				currentX = x0;
-				currentY = y0;
+				
 			end
 
-			PROCESS:
-			begin
+			PROCESS: begin
 				if(currentP  < 1'b0)
 				begin
 					nextX = currentX + 1'b1;
 					nextY = currentY; 
 				end 
 				else 
+				begin
 					nextX = currentX + 1'b1;
 					nextY = currentY + 1'b1;
 				end
 
-				if( currentP > 1'b0)
-					begin
-						nextP = currentP + positiveIncrement;
-					end 
-					else 
-					begin 
-						nextP = currentP + negativeIncrement; 
-					end
+				if(currentP > 1'b0)
+				begin
+					nextP = currentP + positiveIncrement;
 				end 
+				else 
+				begin 
+					nextP = currentP + negativeIncrement; 
+				end
+					
+				next_state = PROCESS;
 
-				next_state = current_state;
-				if ( x1 == currentX ) && ( y1 == currentY )
-					next_state = DONE;				
+				if(x1 == currentX) 
+				begin
+					if(y1 == currentY)
+					begin
+						next_state = DONE;	
+					end 
+				end
+
+
 
 			end
 
-			DONE:
-			begin
+			DONE: begin
 				next_state = IDLE;
 				done = 1'b1;
 			end	
-		
+		endcase
 		//OUTPUT LOGIC
 		// set pixel
-		line_buffer [ 65*currentX + currentY ] = 1'b1;
+		//line_buffer [ 65*currentX + currentY ] = 1'b1;
 
 	end
 endmodule // bresenham
