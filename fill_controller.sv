@@ -15,7 +15,7 @@ module fill_controller
 	input logic math_done,
 	input logic row_done,
 	input logic fill_done,
-	output logic fill_start,
+
 	output logic math_start,
 	output logic row_start
 	output logic fill_start,
