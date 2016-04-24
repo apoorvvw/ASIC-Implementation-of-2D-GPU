@@ -11,10 +11,10 @@ module fill_controller
 	input logic clk,
 	input logic n_rst,
 	input logic fill_en,
-	input logic data_in,
 	input logic math_done,
 	input logic row_done,
 	input logic fill_done,
+	input logic fill_complete,
 
 	output logic math_start,
 	output logic row_start
@@ -90,7 +90,10 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 		row_start = 1'b0;
 		fill_start = 1'b0;
 		done = 1'b0;
-		next_state = DONE;
+		if(fill_complete == 1'b1)
+			next_state = DONE;
+		else
+			next_state = GETROW;
 	end
 	DONE:
 	begin
