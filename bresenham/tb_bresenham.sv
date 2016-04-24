@@ -56,10 +56,10 @@ module tb_bresenham();
 	initial
 	begin
 		tb_n_rst = 0 ;
-		tb_x0 = 8'b00000000; 
-		tb_y0 = 8'b00001001; 
-		tb_x1 = 8'b00001000; 
-		tb_y1 = 8'b00001001;  
+		tb_x0 = 8'b10000000; 
+		tb_y0 = 8'b10000000; 
+		tb_x1 = 8'b10001001; 
+		tb_y1 = 8'b10001000;  
 		#(CLK_PERIOD)
 		#(CLK_PERIOD)
 		#(CLK_PERIOD)
