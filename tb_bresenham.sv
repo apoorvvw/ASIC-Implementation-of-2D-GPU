@@ -24,7 +24,8 @@ module tb_bresenham();
 	//OUTPUTS
 	logic tb_x;	
 	logic tb_y;
-	logic [4159:0] tb_line_buffer;
+	logic [4095:0] tb_line_buffer;
+	logic [63:0][63:0] tb_picture;
 	logic tb_done;
 	
 
@@ -39,7 +40,9 @@ module tb_bresenham();
 		.start(tb_start),
 		.x(tb_x),
 		.y(tb_y), 
+		.test(),
 		.line_buffer(tb_line_buffer), 
+		.picture(tb_picture),
 		.done(tb_done) 
 	);
 	always
@@ -53,10 +56,10 @@ module tb_bresenham();
 	initial
 	begin
 		tb_n_rst = 0 ;
-		tb_x0 = 8'b00010000; 
-		tb_y0 = 8'b00010000; 
-		tb_x1 = 8'b01000000; 
-		tb_y1 = 8'b01000000;  
+		tb_x0 = 8'b00000000; 
+		tb_y0 = 8'b00001001; 
+		tb_x1 = 8'b00001000; 
+		tb_y1 = 8'b00001001;  
 		#(CLK_PERIOD)
 		#(CLK_PERIOD)
 		#(CLK_PERIOD)
