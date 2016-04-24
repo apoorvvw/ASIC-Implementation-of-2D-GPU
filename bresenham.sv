@@ -26,10 +26,10 @@ module bresenham(
 	//Variable declarations
 
 
-	logic [7:0]  deltaY;
-	logic [7:0]  deltaX; 
-	logic signed sx; 
-	logic signed sy;
+	logic signed [8:0]  deltaY;
+	logic signed [8:0]  deltaX; 
+	logic signed [1:0] sx; 
+	logic signed [1:0] sy;
 
 	
 	logic signed [7:0] nextErr; // signed or unsigned? 
@@ -44,6 +44,11 @@ module bresenham(
 	logic [7:0] currentY; 
 	logic [7:0] nextY; 
 	
+	logic [5:0] x0_mod;
+	logic [5:0] y0_mod;
+	logic [5:0] x1_mod;
+	logic [5:0] y1_mod;
+	
 	
 	integer row = 0;
 
@@ -51,10 +56,14 @@ module bresenham(
 	state_type next_state , current_state;
 
 	//DataFlow
-	assign deltaX = x1 - x0; 
-	assign deltaY = y1 - y0; 
-	assign sx =  (x0 < x1) ? 1: -1;
-	assign sy =  (y0 < y1) ? 1: -1;	
+	assign x0_mod = x0 % 64;
+	assign y0_mod = y0 % 64;
+	assign x1_mod = x1 % 64;
+	assign y1_mod = y1 % 64;
+	assign deltaX = (x0_mod < x1_mod) ? (x1_mod - x0_mod) : (x0_mod - x1_mod); 
+	assign deltaY = (y0_mod < y1_mod) ? (y1_mod - y0_mod) : (y0_mod - y1_mod); 
+	assign sx =  (x0_mod < x1_mod) ? 1 : -1;
+	assign sy =  (y0_mod < y1_mod) ? 1 : -1;	
     
     // State register
 	always_ff @ ( posedge clk, negedge n_rst ) begin
@@ -63,8 +72,8 @@ module bresenham(
 			current_state <= IDLE;
 			currentErr <= deltaX - deltaY; 
 			currentETwo <= 2 * currentErr; 
-			currentX <= x0; 
-			currentY <= y0;	
+			currentX <= x0_mod; 
+			currentY <= y0_mod;	
 		end
 		else begin
 			currentErr <= nextErr; 
@@ -94,28 +103,32 @@ module bresenham(
 			end
 
 			PROCESS: begin
-				picture[currentX][currentY] = 1'b1 ;
-				if (currentX == x1)
+				picture[currentY][currentX] = 1'b1;
+				if (currentX == x1_mod && currentY == y1_mod)
 				begin
-					if(currentY == y1)
-					begin
-						next_state = DONE;  
-					end  
+					next_state = DONE;   
 				end 
 				else 
 				begin 
 					nextETwo = 2 * currentErr;
-					if(currentETwo > (-1 * deltaY))
+					if(currentETwo > (-1 *deltaY) && $signed(currentETwo) < $signed(deltaX))
+					begin
+						nextErr = currentErr - deltaY + deltaX;
+						nextX = currentX + sx; 
+						nextY = currentY + sy; 
+					end
+					else if(currentETwo > (-1 *deltaY))
 					begin
 						nextErr = currentErr - deltaY; 
 						nextX = currentX + sx; 
 								
 					end 
-					if( currentETwo < deltaX)  
+					else if($signed(currentETwo) < $signed(deltaX))  
 					begin
 						nextErr = currentErr + deltaX; 
 						nextY = currentY + sy; 
 					end
+
 					
 					next_state = PROCESS;
 					
