@@ -38,7 +38,7 @@ typedef enum logic [3:0] {IDLE, MATH, GETROW, FILL, DONE, MATH_WAIT, ROW_WAIT}
 	MATH:
 	begin
 		math_start = 1'b1;
-		row_start = 1'b1;
+		row_start = 1'b0;
 		fill_start = 1'b0;
 		done = 1'b0;
 		if(math_done == 1'b1)
