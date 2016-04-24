@@ -51,7 +51,6 @@ module bresenham(
 	
 	
 	integer row = 0;
-	integer print = 0;
 
 	typedef enum logic [1:0] {IDLE, PROCESS, DONE } state_type;
 	state_type next_state , current_state;
@@ -112,19 +111,19 @@ module bresenham(
 				else 
 				begin 
 					nextETwo = 2 * currentErr;
-					if(currentETwo > (-1 *deltaY) && $signed(currentETwo) < $signed(deltaX))
+					if((currentETwo > (-1 *deltaY)) && ($signed(currentETwo) < $signed(deltaX)) && (currentX != x1_mod) && (currentY != y1_mod))
 					begin
 						nextErr = currentErr - deltaY + deltaX;
 						nextX = currentX + sx; 
 						nextY = currentY + sy; 
 					end
-					else if(currentETwo > (-1 *deltaY))
+					else if(currentX != x1_mod && (currentETwo > (-1 *deltaY)))
 					begin
 						nextErr = currentErr - deltaY; 
 						nextX = currentX + sx; 
 								
 					end 
-					else if($signed(currentETwo) < $signed(deltaX))  
+					else if((currentY != y1_mod) && ($signed(currentETwo) < $signed(deltaX)))
 					begin
 						nextErr = currentErr + deltaX; 
 						nextY = currentY + sy; 
