@@ -20,10 +20,10 @@ entity on_chip_sram_wrapper is
 		-- with verilog's parameter mapping syntax (google it) or you can simply create a
 		-- separate copy of this wrapper for each on-chip sram instance and modify them below.
 
-		W_ADDR_SIZE_BITS  : natural := 22;    -- Address bus size in bits/pins with addresses corresponding to 
+		W_ADDR_SIZE_BITS  : natural := 16;    -- Address bus size in bits/pins with addresses corresponding to 
 																					-- the starting word of the accesss
 		W_WORD_SIZE_BYTES : natural := 3;   	-- Word size of the memory in bytes
-		W_DATA_SIZE_WORDS : natural := 2;   	-- Data bus size in "words"
+		W_DATA_SIZE_WORDS : natural := 64;   	-- Data bus size in "words"
 		W_READ_DELAY      : time    := 5 ns; 	-- Delay/latency per read access (total time between start of supplying address and when the data read from memory appears on the r_data port)
 																					-- Keep the 5 ns delay for 0.5u on-chip SRAM
 		W_WRITE_DELAY     : time    := 5 ns 	-- Delay/latency per write access (total time between start of supplying address and when the w_data value is written into memory)
@@ -60,7 +60,7 @@ architecture wrapper of on_chip_sram_wrapper is
 	component simple_scale_mem is
 	generic (
 						-- Memory Model parameters
-						ADDR_SIZE_BITS	: natural	:= 22;		-- Address bus size in bits/pins with addresses corresponding to 
+						ADDR_SIZE_BITS	: natural	:= 16;		-- Address bus size in bits/pins with addresses corresponding to 
 																								-- the starting word of the accesss
 						WORD_SIZE_BYTES	: natural	:= 3;			-- Word size of the memory in bytes
 						DATA_SIZE_WORDS	: natural	:= 2;			-- Data bus size in "words"
