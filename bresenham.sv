@@ -15,10 +15,11 @@ module bresenham(
 	input wire [7:0] x1,
 	input wire [7:0] y1,
 	input wire start,
-
-	output reg x, 
+	output reg x,
 	output reg y,
-	output reg [4159:0] line_buffer,
+	output reg test,
+	output reg [4095:0] line_buffer,
+	output reg [63:0] [63:0] picture,
 	output reg done
 );
 
@@ -39,6 +40,8 @@ module bresenham(
 	
 	logic signed [7:0]  currentP; 
 	logic signed [7:0]  nextP;
+	
+	integer row = 0;
 
 	typedef enum logic [1:0] {IDLE, PROCESS, DONE } state_type;
 	state_type next_state , current_state;
@@ -58,7 +61,6 @@ module bresenham(
 			currentP <= initialP ;
 			currentX <= x0; 
 			currentY <= y0;	
-			line_buffer <= '0;
 		end
 		else begin
 			currentP <= nextP; 
@@ -80,7 +82,9 @@ module bresenham(
 				//currentP = initialP;
 				//currentX = x0;
 				//currentY = y0;
-				
+				done = 1'b0;
+				//line_buffer = 4096'b0;
+				picture  = 4096'b0;
 				if (start)
 					next_state = PROCESS;
 
@@ -98,6 +102,8 @@ module bresenham(
 					nextX = currentX + 1'b1;
 					nextY = currentY + 1'b1;
 				end
+
+				row = row + 1;
 
 				if(currentP > 1'b0)
 				begin
@@ -129,7 +135,15 @@ module bresenham(
 		endcase
 		//OUTPUT LOGIC
 		// set pixel
-		//line_buffer [ 65*currentX + currentY ] = 1'b1;
+
+		//line_buffer [ 64*currentY + currentX ] = 1'b1;
+		//start = currentY * 64 + 64;
+		//endd = currentY * 64;
+		//line_buffer[: ] ;
+
+		picture[currentX][currentY] = 1'b1 ;				
+
+		//assert(1) $display ("%b",test);
 
 	end
 endmodule // bresenham
