@@ -10,7 +10,7 @@
 
 module fill_wrapper
 #(
-	ADDR_SIZE_BITS = 16,
+	ADDR_SIZE_BITS = 30,
 	WORD_SIZE_BYTES = 3,
 	DATA_SIZE_WORDS = 64
 	
@@ -29,13 +29,13 @@ module fill_wrapper
 	input logic [4095:0] line_buffer,
 
 	
-	input logic [31:0]init_file_number,
-	input logic [31:0]dump_file_number,
+	input logic [29:0]init_file_number,
+	input logic [29:0]dump_file_number,
 	input wire mem_clr,
 	input wire mem_init,
 	input wire mem_dump,
-	input logic [31:0]start_address,
-	input logic [31:0]last_address,
+	input logic [29:0]start_address,
+	input logic [29:0]last_address,
 	input wire verbose
 	
 );
