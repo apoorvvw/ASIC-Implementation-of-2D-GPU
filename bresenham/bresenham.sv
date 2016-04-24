@@ -38,11 +38,11 @@ module bresenham(
 	logic signed [7:0] nextETwo; // signed or unsigned? 
 	logic signed [7:0] currentETwo;
 	
-	logic [7:0] currentX; 
-	logic [7:0] nextX; 
+	logic signed [8:0] currentX; 
+	logic signed [8:0] nextX; 
 	
-	logic [7:0] currentY; 
-	logic [7:0] nextY; 
+	logic signed [8:0] currentY; 
+	logic signed [8:0] nextY; 
 	
 	logic [5:0] x0_mod;
 	logic [5:0] y0_mod;
@@ -51,7 +51,8 @@ module bresenham(
 	
 	
 	integer row = 0;
-
+	integer print = 0;
+	
 	typedef enum logic [1:0] {IDLE, PROCESS, DONE } state_type;
 	state_type next_state , current_state;
 
@@ -114,19 +115,19 @@ module bresenham(
 					if((currentETwo > (-1 *deltaY)) && ($signed(currentETwo) < $signed(deltaX)) && (currentX != x1_mod) && (currentY != y1_mod))
 					begin
 						nextErr = currentErr - deltaY + deltaX;
-						nextX = currentX + sx; 
-						nextY = currentY + sy; 
+						nextX = $signed(currentX) + $signed(sx); 
+						nextY = $signed(currentY) + $signed(sy); 
 					end
 					else if(currentX != x1_mod && (currentETwo > (-1 *deltaY)))
 					begin
 						nextErr = currentErr - deltaY; 
-						nextX = currentX + sx; 
+						nextX = $signed(currentX) + $signed(sx); 
 								
 					end 
 					else if((currentY != y1_mod) && ($signed(currentETwo) < $signed(deltaX)))
 					begin
 						nextErr = currentErr + deltaX; 
-						nextY = currentY + sy; 
+						nextY = $signed(currentY) + $signed(sy); 
 					end
 
 					
