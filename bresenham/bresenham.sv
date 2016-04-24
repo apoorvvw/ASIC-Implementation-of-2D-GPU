@@ -51,6 +51,7 @@ module bresenham(
 	
 	
 	integer row = 0;
+	integer print = 0;
 
 	typedef enum logic [1:0] {IDLE, PROCESS, DONE } state_type;
 	state_type next_state , current_state;
@@ -139,6 +140,16 @@ module bresenham(
 			DONE: begin
 				next_state = IDLE;
 				done = 1'b1;
+				if (print == 0)
+				begin  
+				
+					for (int k = 0 ; k < 64; k ++) begin
+						$display("Picture:  %b", picture[k]);
+					end
+				
+					print = 1; 
+				
+				end 
 			end	
 		endcase
 		//OUTPUT LOGIC
