@@ -1,4 +1,4 @@
-// $Id: $
+	// $Id: $
 // File name:   fill_wrapper.sv
 // Created:     4/23/2016
 // Author:      Yudi Wu
@@ -12,17 +12,14 @@ module fill_wrapper
 #(
 	ADDR_SIZE_BITS = 16,
 	WORD_SIZE_BYTES = 3,
-	DATA_SIZE_WORDS = 64,
+	DATA_SIZE_WORDS = 64
 	
 )
 (
 	input wire clk,
 	input wire n_rst,
 	input wire fill_en,
-
-
 	output wire done,
-	
 	input logic fill_type,
 	
 	input logic [47:0] coordinates,
@@ -50,7 +47,7 @@ module fill_wrapper
 	reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] read_data;
 	
 	reg math_start, math_done;
-	reg row_start, row_done;
+	reg row_start;
 	reg fill_start, fill_done;
 	reg all_finish;
 
@@ -60,11 +57,10 @@ module fill_wrapper
 		.n_rst(n_rst),
 		.fill_en(fill_en),
 		.math_done(math_done),
-		.row_done(row_done),
 		.fill_done(fill_done),
 		.all_finish(all_finish),
 		.math_start(math_start),
-		.row_start(row_start)
+		.row_start(row_start),
 		.fill_start(fill_start),
 		.done(done)
 	);
@@ -85,7 +81,6 @@ module fill_wrapper
 		.row_start(row_start),
 		.fill_start(fill_start),
 		.math_done(math_done),
-		.row_done(row_done),
 		.fill_done(fill_done),
 		.all_finish(all_finish),
 		
