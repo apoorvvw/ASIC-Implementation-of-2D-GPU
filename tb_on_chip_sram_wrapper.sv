@@ -11,8 +11,8 @@
 module tb_on_chip_sram_wrapper ();
 	// SRAM configuation parameters (based on values set in wrapper file)
 	localparam TB_CLK_PERIOD			= 6.0;	// Read/Write delays are 5ns and need ~1 ns for wire propagation
-	localparam TB_ADDR_SIZE_BITS	= 22; 	// 16 => 64K Words in Memory
-	localparam TB_DATA_SIZE_WORDS	= 2;		// Single word access (only a demo case, can access arbitraliy many bytes during an access but all accesses must be the number of words wide)
+	localparam TB_ADDR_SIZE_BITS	= 16; 	// 16 => 64K Words in Memory
+	localparam TB_DATA_SIZE_WORDS	= 64;		// Single word access (only a demo case, can access arbitraliy many bytes during an access but all accesses must be the number of words wide)
 	localparam TB_WORD_SIZE_BYTES	= 3;		// Single byte words (only a demo case, words can be as large as 3 bytes)
 	localparam TB_ACCES_SIZE_BITS	= (TB_DATA_SIZE_WORDS * TB_WORD_SIZE_BYTES * 8);
 	
