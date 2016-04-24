@@ -20,7 +20,7 @@ entity on_chip_sram_wrapper is
 		-- with verilog's parameter mapping syntax (google it) or you can simply create a
 		-- separate copy of this wrapper for each on-chip sram instance and modify them below.
 
-		W_ADDR_SIZE_BITS  : natural := 32;    -- Address bus size in bits/pins with addresses corresponding to 
+		W_ADDR_SIZE_BITS  : natural := 30;    -- Address bus size in bits/pins with addresses corresponding to 
 																					-- the starting word of the accesss
 		W_WORD_SIZE_BYTES : natural := 3;   	-- Word size of the memory in bytes
 		W_DATA_SIZE_WORDS : natural := 64;   	-- Data bus size in "words"
@@ -60,7 +60,7 @@ architecture wrapper of on_chip_sram_wrapper is
 	component simple_scale_mem is
 	generic (
 						-- Memory Model parameters
-						ADDR_SIZE_BITS	: natural	:= 32;		-- Address bus size in bits/pins with addresses corresponding to 
+						ADDR_SIZE_BITS	: natural	:= 30;		-- Address bus size in bits/pins with addresses corresponding to 
 																								-- the starting word of the accesss
 						WORD_SIZE_BYTES	: natural	:= 3;			-- Word size of the memory in bytes
 						DATA_SIZE_WORDS	: natural	:= 64;			-- Data bus size in "words"
