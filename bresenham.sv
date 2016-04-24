@@ -25,21 +25,25 @@ module bresenham(
 
 	//Variable declarations
 
-	logic signed [7:0]  initialP; 
 
-	logic signed [7:0]  deltaY;
-	logic signed [7:0]  deltaX; 
-	logic signed [7:0]  positiveIncrement; 
-	logic signed [7:0]  negativeIncrement;
+	logic [7:0]  deltaY;
+	logic [7:0]  deltaX; 
+	logic signed sx; 
+	logic signed sy;
 
+	
+	logic signed [7:0] nextErr; // signed or unsigned? 
+	logic signed [7:0] currentErr;
+
+	logic signed [7:0] nextETwo; // signed or unsigned? 
+	logic signed [7:0] currentETwo;
+	
 	logic [7:0] currentX; 
 	logic [7:0] nextX; 
 	
 	logic [7:0] currentY; 
 	logic [7:0] nextY; 
 	
-	logic signed [7:0]  currentP; 
-	logic signed [7:0]  nextP;
 	
 	integer row = 0;
 
@@ -49,21 +53,22 @@ module bresenham(
 	//DataFlow
 	assign deltaX = x1 - x0; 
 	assign deltaY = y1 - y0; 
-	assign negativeIncrement =  (2 * deltaY);
-	assign positiveIncrement = 2 * deltaY -  2 * deltaX;	
-	assign initialP = (2 * deltaY) - deltaX;
+	assign sx =  (x0 < x1) ? 1: -1;
+	assign sy =  (y0 < y1) ? 1: -1;	
     
     // State register
 	always_ff @ ( posedge clk, negedge n_rst ) begin
 		
-		if ( n_rst == 1'b0) begin
+		if (n_rst == 1'b0) begin
 			current_state <= IDLE;
-			currentP <= initialP ;
+			currentErr <= deltaX - deltaY; 
+			currentETwo <= 2 * currentErr; 
 			currentX <= x0; 
 			currentY <= y0;	
 		end
 		else begin
-			currentP <= nextP; 
+			currentErr <= nextErr; 
+			currentETwo <= nextETwo; 
 	 		currentX <= nextX; 
 	 		currentY <= nextY;
 	 		current_state <= next_state;
@@ -73,17 +78,14 @@ module bresenham(
     always_comb begin:	NEXT_STATE_LOGIC
 		
 		next_state = current_state;
-		nextP = currentP;
+		nextErr = currentErr; 
+		nextETwo = currentETwo;
 		nextX = currentX;
 		nextY = currentY;
 		case(current_state)
 		
 			IDLE: begin
-				//currentP = initialP;
-				//currentX = x0;
-				//currentY = y0;
 				done = 1'b0;
-				//line_buffer = 4096'b0;
 				picture  = 4096'b0;
 				if (start)
 					next_state = PROCESS;
@@ -92,39 +94,32 @@ module bresenham(
 			end
 
 			PROCESS: begin
-				if(currentP  < 1'b0)
+				picture[currentX][currentY] = 1'b1 ;
+				if (currentX == x1)
 				begin
-					nextX = currentX + 1'b1;
-					nextY = currentY; 
-				end 
-				else 
-				begin
-					nextX = currentX + 1'b1;
-					nextY = currentY + 1'b1;
-				end
-
-				row = row + 1;
-
-				if(currentP > 1'b0)
-				begin
-					nextP = currentP + positiveIncrement;
+					if(currentY == y1)
+					begin
+						next_state = DONE;  
+					end  
 				end 
 				else 
 				begin 
-					nextP = currentP + negativeIncrement; 
-				end
-					
-				next_state = PROCESS;
-
-				if(x1 == currentX) 
-				begin
-					if(y1 == currentY)
+					nextETwo = 2 * currentErr;
+					if(currentETwo > (-1 * deltaY))
 					begin
-						next_state = DONE;	
+						nextErr = currentErr - deltaY; 
+						nextX = currentX + sx; 
+								
 					end 
-				end
-
-
+					if( currentETwo < deltaX)  
+					begin
+						nextErr = currentErr + deltaX; 
+						nextY = currentY + sy; 
+					end
+					
+					next_state = PROCESS;
+					
+				end 
 
 			end
 
@@ -140,8 +135,7 @@ module bresenham(
 		//start = currentY * 64 + 64;
 		//endd = currentY * 64;
 		//line_buffer[: ] ;
-
-		picture[currentX][currentY] = 1'b1 ;				
+				
 
 		//assert(1) $display ("%b",test);
 
