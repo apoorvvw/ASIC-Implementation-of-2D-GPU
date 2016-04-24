@@ -21,7 +21,7 @@ texture3		139264~143359
 */
 module fill_block
 #(
-	ADDR_SIZE_BITS = 16,
+	ADDR_SIZE_BITS = 30,
 	WORD_SIZE_BYTES = 3,
 	DATA_SIZE_WORDS = 64
 	
