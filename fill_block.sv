@@ -11,14 +11,14 @@ module fill_block
 	input logic clk,
 	input logic n_rst,
 	input logic fill_type,
-	input wire find_flag,
+	input wire math_en,
 	input logic [47:0] coordinates,
 	//input logic [1:0] texture_code,
 	input logic [23:0] color_code,
 	input logic layer_num,
 	input logic [4095:0] line_buffer,
 	//input logic [1535:0] texture,
-	output reg find_done,
+	output reg math_done,
 	output logic [1535:0] layer_row,
 	
 
@@ -35,17 +35,17 @@ module fill_block
         end 
         else 
         begin
-	   	    xmin <= nextxmin;
+			xmin <= nextxmin;
        	    ymin <= nextymin;
 		end
     end
    //find ymin,xmin
     always_comb 
     begin
-        find_done = 0;
+        //math_done = 0;
         nextxmin = xmin;
         nextymin = ymin;
-        if(find_flag)
+        if(math_en == 1'b1)
         begin
             nextxmin = coordinates[7:0];
             if (coordinates[23:16] > nextxmin)
@@ -66,8 +66,10 @@ module fill_block
             begin
                 nextymin = coordinates[39:32];
             end
-            find_done = 1;
+            math_done = 1'b1;
         end
+		else
+			math_done = 1'b0;
     end
     
    reg [31:0]currentaddress;
@@ -101,7 +103,7 @@ module fill_block
                 begin
                     adr1 = j;
                     found_flag = 1;
-                    break
+                    break;
                 end             
             end
             //if there is information on the line, do next step
@@ -112,7 +114,7 @@ module fill_block
 		            if(lineline[j] == 1'b1)
 		            begin
 		                adr2 = j;
-		                break
+		                break;
 		            end    
 		        end
 		        //if two address are equal, only fill that pixel
@@ -131,19 +133,8 @@ module fill_block
 		       				///write to the registers    
 		       				    
 		       			end
-									       			
-		       	
 		       	end
-		       	
-		        	
-		    end 
-		 
-            
+		    end
         end
-
 	end
-
-
-
-
 endmodule
