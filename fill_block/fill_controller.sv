@@ -11,16 +11,15 @@ module fill_controller
 	input logic clk,
 	input logic n_rst,
 	input logic fill_en,
-	input logic data_in,
 	input logic math_done,
 	input logic fill_done,
 	input logic all_finish,
 	output logic math_start,
-	output logic row_start
+	output logic row_start,
 	output logic fill_start,
 	output logic done
 );
-typedef enum logic [2:0] {IDLE, MATH, READROW, WAIT1, WAIT2,FILL, WAIT3, WAIT4,DONE} 
+typedef enum logic [3:0] {IDLE, MATH, READROW, WAIT1, WAIT2, FILL, WAIT3, WAIT4, DONE} 
 	state_type;
 	state_type state, next_state;
 	
@@ -34,30 +33,27 @@ typedef enum logic [2:0] {IDLE, MATH, READROW, WAIT1, WAIT2,FILL, WAIT3, WAIT4,D
 	
 	always_comb
 	begin
-		nextstate = state;
+		next_state = state;
 		math_start = 1'b0;
 		row_start = 1'b0;
 		fill_start = 1'b0;
 		done = 1'b0;
 		
 		case(state)
-		IDLE: 
-		begin
+		IDLE: begin
 			if(fill_en == 1'b1)
 				next_state = MATH;
 		end
-		MATH:
-		begin
+		MATH: begin
 			math_start = 1'b1;
 			if(math_done == 1'b1)
 				next_state = READROW;
 		end
 
-		READROW:
-		begin
-			if(all_finish == 1'b1)
+		READROW: begin
+			if(all_finish == 1'b1) begin
 				next_state = DONE;
-			else begin
+			end else begin
 				row_start = 1'b1;
 				next_state = WAIT1;
 			end
