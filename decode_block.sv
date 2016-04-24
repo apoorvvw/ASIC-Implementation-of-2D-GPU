@@ -7,12 +7,12 @@
 // Description: Decode Block for Decoding instructions
 module decode_block
 (
-	input wire fifo_data[82:0],
+	input wire fifo_data[81:0],
 	output reg coordinates[47:0],
 	output reg alpha_val[3:0],
 	output reg texture_code[1:0],
 	output reg color_code[23:0],
-	output reg layer_num[1:0],
+	output reg layer_num,
 	output reg vertice_num,
 	output reg inst_type,
 	output reg fill_type
@@ -31,18 +31,18 @@ begin
 		begin
 			coordinates = fifo_data[17:2], fifo_data[33:18], fifp_data[49:34]};
 		end
-		layer_num = fifo_data[51:50];
-		if(fifo_data[52] == 1'd0) //fill type is solid color
+		layer_num = fifo_data[50];
+		if(fifo_data[51] == 1'd0) //fill type is solid color
 		begin
-			fill_type = fifo_data[52];
-			color_code = fifo_data[76:53];
+			fill_type = fifo_data[51];
+			color_code = fifo_data[75:52];
 		end
 		else //fill type is texture
 		begin
-			fill_type = fifo_data[52];
-			texture_code = fifo_data[78:77];
+			fill_type = fifo_data[51];
+			texture_code = fifo_data[77:76];
 		end
-		alpha_val = fifo_data[82:79];
+		alpha_val = fifo_data[81:78];
 	end
 	else
 	begin
@@ -50,7 +50,7 @@ begin
 		coordinates[47:0] = '0;
 		texture_code[1:0] = '0;
 		color_code[23:0] = '0;
-		layer_num[1:0] = '0;
+		layer_num = '0;
 		vertice_num[2:0] = '0;
 	end
 
