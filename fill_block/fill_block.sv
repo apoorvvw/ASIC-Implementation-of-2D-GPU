@@ -108,6 +108,7 @@ module fill_block
    typedef enum logic [2:0] {IDLE, FILL, WAIT1, WAIT2, UPDATE, DONE} 
 	state_type;
 	state_type state, next_state;
+	
     always_ff @ (posedge clk, negedge n_rst)
 	begin
 	    if(n_rst == 0) begin
@@ -115,7 +116,7 @@ module fill_block
 	    	state <= IDLE;
 	   	end else begin
 	   		state <= next_state;
-	  		if( i == 0)
+	  		if( nexti == 0)
 	  		begin
 				if(layer_num == 0)
 				    currentaddress <= 24'h000000 + ymin * 24'h000100  + xmin;
@@ -227,7 +228,7 @@ module fill_block
 			next_state = UPDATE;
 		end
 		UPDATE: begin
-		    nextaddress = currentaddress + 8'd256 * 5'd24;
+		    nextaddress = currentaddress + 24'd256 * 24'd24;
 		    nexti = i + 1;
 		    next_state = DONE;
 		   
