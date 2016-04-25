@@ -14,7 +14,7 @@ module bresenham(
 	input wire [7:0] y0,
 	input wire [7:0] x1,
 	input wire [7:0] y1,
-	input reg [4095:0] line_buffer,	
+	input reg [4095:0] line_buffer,
 	input wire start,
 	output reg x,
 	output reg y,
@@ -52,6 +52,7 @@ module bresenham(
 	
 	integer row = 0;
 	integer print = 0;
+	//reg [63:0] [63:0] pic;
 	
 	typedef enum logic [2:0] {IDLE, CALC, PROCESS, DONE } state_type;
 	state_type next_state , current_state;
@@ -65,7 +66,6 @@ module bresenham(
 	assign deltaY = (y0_mod < y1_mod) ? (y1_mod - y0_mod) : (y0_mod - y1_mod); 
 	assign sx =  (x0_mod < x1_mod) ? 1 : -1;
 	assign sy =  (y0_mod < y1_mod) ? 1 : -1;	
-    
     // State register
 	always_ff @ ( posedge clk, negedge n_rst ) begin
 		
@@ -96,7 +96,9 @@ module bresenham(
 		
 			IDLE: begin
 				done = 1'b0;
-				picture  = 4096'b0;
+				nextErr = deltaX - deltaY;
+				nextX = x0_mod;
+				nextY = y0_mod;
 				if (start) begin
 					next_state = CALC;
 					nextETwo = 2 * currentErr;					
