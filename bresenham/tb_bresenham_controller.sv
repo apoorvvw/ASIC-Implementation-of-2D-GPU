@@ -44,6 +44,7 @@ module tb_bresenham_controller();
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b1;
 		@(negedge tb_clk);
+		@(negedge tb_clk);
 		tb_n_rst = 1'b0;
 		@(negedge tb_clk);
 		@(negedge tb_clk);
@@ -53,6 +54,7 @@ module tb_bresenham_controller();
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b0;
 		@(negedge tb_clk);
+		@(negedge tb_clk);
 		tb_n_rst = 1'b0;
 		@(negedge tb_clk);
 		@(negedge tb_clk);
@@ -61,7 +63,8 @@ module tb_bresenham_controller();
 		//Test case 3
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b0;
-		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		tb_coordinates = 48'b010101010101010111111111111111110000000100000001;
+		@(negedge tb_clk);
 		@(negedge tb_clk);
 		if(tb_draw_en == 1'b0)
 			$error("Not in draw state");
@@ -79,7 +82,8 @@ module tb_bresenham_controller();
 		//Test case 4
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b0;
-		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		tb_coordinates = 48'b010101010101010111111111111111110000000100000001;
+		@(negedge tb_clk);
 		@(negedge tb_clk);
 		tb_draw_done = 1'b1;
 		@(negedge tb_clk);
@@ -95,7 +99,8 @@ module tb_bresenham_controller();
 		//Test case 5
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b0;
-		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		tb_coordinates = 48'b010101010101010111111111111111110000000100000001;
+		@(negedge tb_clk);
 		@(negedge tb_clk);
 		tb_draw_done = 1'b1;
 		@(negedge tb_clk);
@@ -112,7 +117,8 @@ module tb_bresenham_controller();
 		//Test case 6
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b0;
-		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		tb_coordinates = 48'b010101010101010111111111111111110000000100000001;
+		@(negedge tb_clk);
 		@(negedge tb_clk);
 		tb_draw_done = 1'b1;
 		@(negedge tb_clk);
@@ -130,7 +136,8 @@ module tb_bresenham_controller();
 		//Test case 7
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b0;
-		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		tb_coordinates = 48'b010101010101010111111111111111110000000100000001;
+		@(negedge tb_clk);
 		@(negedge tb_clk);
 		tb_draw_done = 1'b1;
 		@(negedge tb_clk);
@@ -150,7 +157,8 @@ module tb_bresenham_controller();
 		//Test Case 8
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b1;
-		tb_coordinates = 48'b010101010101010111111111111111110000000000000000;
+		tb_coordinates = 48'b010101010101010111111111111111110000000100000001;
+		@(negedge tb_clk);
 		@(negedge tb_clk);
 		if(tb_draw_en == 1'b1 && tb_bla_done == 1'b0 && tb_x0 == 8'd0 && tb_y0 == 8'd0 && tb_x1 == 8'b11111111 && tb_y1 == 8'b11111111)
 			$info("Draw 3 1 looks good");
