@@ -14,11 +14,11 @@ module bresenham(
 	input wire [7:0] y0,
 	input wire [7:0] x1,
 	input wire [7:0] y1,
+	input reg [4095:0] line_buffer,	
 	input wire start,
 	output reg x,
 	output reg y,
 	output reg test,
-	output reg [4095:0] line_buffer,
 	output reg [63:0] [63:0] picture,
 	output reg done
 );
@@ -32,11 +32,11 @@ module bresenham(
 	logic signed [1:0] sy;
 
 	
-	logic signed [7:0] nextErr; // signed or unsigned? 
-	logic signed [7:0] currentErr;
+	logic signed [8:0] nextErr; // signed or unsigned? 
+	logic signed [8:0] currentErr;
 
-	logic signed [7:0] nextETwo; // signed or unsigned? 
-	logic signed [7:0] currentETwo;
+	logic signed [8:0] nextETwo; // signed or unsigned? 
+	logic signed [8:0] currentETwo;
 	
 	logic signed [8:0] currentX; 
 	logic signed [8:0] nextX; 
@@ -53,7 +53,7 @@ module bresenham(
 	integer row = 0;
 	integer print = 0;
 	
-	typedef enum logic [1:0] {IDLE, PROCESS, DONE } state_type;
+	typedef enum logic [2:0] {IDLE, CALC, PROCESS, DONE } state_type;
 	state_type next_state , current_state;
 
 	//DataFlow
@@ -97,12 +97,20 @@ module bresenham(
 			IDLE: begin
 				done = 1'b0;
 				picture  = 4096'b0;
-				if (start)
-					next_state = PROCESS;
+				if (start) begin
+					next_state = CALC;
+					nextETwo = 2 * currentErr;					
+				end
 
 				
 			end
-
+			
+			CALC:
+			begin
+				nextETwo = 2 * currentErr;
+				next_state = PROCESS;
+			end			
+			
 			PROCESS: begin
 				picture[currentY][currentX] = 1'b1;
 				if (currentX == x1_mod && currentY == y1_mod)
@@ -111,7 +119,6 @@ module bresenham(
 				end 
 				else 
 				begin 
-					nextETwo = 2 * currentErr;
 					if((currentETwo > (-1 *deltaY)) && ($signed(currentETwo) < $signed(deltaX)) && (currentX != x1_mod) && (currentY != y1_mod))
 					begin
 						nextErr = currentErr - deltaY + deltaX;
@@ -129,9 +136,8 @@ module bresenham(
 						nextErr = currentErr + deltaX; 
 						nextY = $signed(currentY) + $signed(sy); 
 					end
-
-					
-					next_state = PROCESS;
+										
+					next_state = CALC;
 					
 				end 
 
