@@ -14,7 +14,7 @@ module bresenham_controller
 	input logic vertice_num,
 	input logic bla_en,
 	input logic [47:0]coordinates,
-	
+	output logic reset_buff,
 	output logic [7:0] x0,
 	output logic [7:0] y0,
 	output logic [7:0] x1,
@@ -22,7 +22,7 @@ module bresenham_controller
 	output logic draw_en,
 	output logic bla_done
 );
-	typedef enum logic [3:0] {IDLE, MIN_CALC, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, WAIT3_1, WAIT3_2, DONE_WAIT} state_type;
+	typedef enum logic [3:0] {IDLE, MIN_CALC, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, WAIT3_1, WAIT3_2, DONE_WAIT, RESET} state_type;
 	state_type state, next_state;
 	reg [7:0]min_x;
 	reg [7:0]min_y;
@@ -38,6 +38,7 @@ module bresenham_controller
 	begin
 		draw_en = 1'b0;
 		bla_done = 1'b0;
+		reset_buff = 1'b0;
 		x0 = '0;
 		y0 = '0;
 		x1 = '0;
@@ -47,6 +48,7 @@ module bresenham_controller
 		IDLE: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = '0;
 			y0 = '0;
 			x1 = '0;
@@ -82,6 +84,17 @@ module bresenham_controller
             			if (coordinates[31:24] < min_y)
                 			min_x = coordinates[31:24];
 			end
+			next_state = RESET;
+		end
+		RESET:
+		begin
+			draw_en = 1'b0;
+			bla_done = 1'b0;
+			reset_buff = 1'b1;
+			x0 = '0;
+			y0 = '0;
+			x1 = '0;
+			y1 = '0;
 			if(vertice_num == 1'b1)
 				next_state = DRAW3_1;
 			else
@@ -90,6 +103,7 @@ module bresenham_controller
 		DRAW2: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = coordinates[7:0] - min_x;
 			y0 = coordinates[15:8] - min_y;
 			x1 = coordinates[23:16] - min_x;
@@ -102,6 +116,7 @@ module bresenham_controller
 		WAIT2: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = '0;
 			y0 = '0;
 			x1 = '0;
@@ -111,6 +126,7 @@ module bresenham_controller
 		DRAW3_1: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = coordinates[7:0] - min_x;
 			y0 = coordinates[15:8] - min_y;
 			x1 = coordinates[23:16] - min_x;
@@ -123,6 +139,7 @@ module bresenham_controller
 		WAIT3_1: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = '0;
 			y0 = '0;
 			x1 = '0;
@@ -132,6 +149,7 @@ module bresenham_controller
 		DRAW3_2: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = coordinates[7:0] - min_x;
 			y0 = coordinates[15:8] - min_y;
 			x1 = coordinates[39:32] - min_x;
@@ -144,6 +162,7 @@ module bresenham_controller
 		WAIT3_2: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = '0;
 			y0 = '0;
 			x1 = '0;
@@ -153,6 +172,7 @@ module bresenham_controller
 		DRAW3_3: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = coordinates[23:16] - min_x;
 			y0 = coordinates[31:24] - min_y;
 			x1 = coordinates[39:32] - min_x;
@@ -165,6 +185,7 @@ module bresenham_controller
 		DONE: begin
 			draw_en = 1'b0;
 			bla_done = 1'b1;
+			reset_buff = 1'b0;
 			x0 = '0;
 			y0 = '0;
 			x1 = '0;
@@ -174,6 +195,7 @@ module bresenham_controller
 		DONE_WAIT: begin
 			draw_en = 1'b0;
 			bla_done = 1'b0;
+			reset_buff = 1'b0;
 			x0 = '0;
 			y0 = '0;
 			x1 = '0;
