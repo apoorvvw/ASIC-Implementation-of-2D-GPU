@@ -22,8 +22,10 @@ module bresenham_controller
 	output logic draw_en,
 	output logic bla_done
 );
-	typedef enum logic [3:0] {IDLE, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, WAIT3_1, WAIT3_2, DONE_WAIT} state_type;
+	typedef enum logic [3:0] {IDLE, MIN_CALC, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, WAIT3_1, WAIT3_2, DONE_WAIT} state_type;
 	state_type state, next_state;
+	reg [7:0]min_x;
+	reg [7:0]min_y;
 	always_ff @ (posedge clk, negedge n_rst)
 	begin
 		if(n_rst == 0)
@@ -49,20 +51,49 @@ module bresenham_controller
 			y0 = '0;
 			x1 = '0;
 			y1 = '0;
-			if(bla_en == 1'b1 && vertice_num == 1'b1)
-				next_state = DRAW3_1;
-			else if(bla_en == 1'b1 && vertice_num == 1'b0)
-				next_state = DRAW2;
+			if(bla_en == 1'b1)
+				next_state = MIN_CALC;
 			else
 				next_state = IDLE;
+		end
+		MIN_CALC:
+		begin
+			if(vertice_num == 1'b1)
+			begin
+				min_x = coordinates[7:0];
+            			if (coordinates[23:16] < min_x)
+                			min_x = coordinates[23:16];
+            			if (coordinates[39:32] < min_x)
+                			min_x = coordinates[39:32];
+
+           
+            			min_y = coordinates[15:8];
+            			if (coordinates[31:24] < min_y)
+                			min_x = coordinates[31:24];
+            			if (coordinates[47:40] < min_y)
+                			min_x = coordinates[39:32];
+			end
+			else
+			begin
+				min_x = coordinates[7:0];
+				if(coordinates[23:16] < min_x)
+					min_x = coordinates[23:16];
+				min_y = coordinates[15:8];
+            			if (coordinates[31:24] < min_y)
+                			min_x = coordinates[31:24];
+			end
+			if(vertice_num == 1'b1)
+				next_state = DRAW3_1;
+			else
+				next_state = DRAW2;
 		end
 		DRAW2: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
-			x0 = {coordinates[7:0]};
-			y0 = coordinates[15:8];
-			x1 = coordinates[23:16];
-			y1 = coordinates[31:24];
+			x0 = coordinates[7:0] - min_x;
+			y0 = coordinates[15:8] - min_y;
+			x1 = coordinates[23:16] - min_x;
+			y1 = coordinates[31:24] - min_y;
 			if(draw_done == 1'b1)
 				next_state = WAIT2;
 			else
@@ -80,10 +111,10 @@ module bresenham_controller
 		DRAW3_1: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
-			x0 = coordinates[7:0];
-			y0 = coordinates[15:8];
-			x1 = coordinates[23:16];
-			y1 = coordinates[31:24];
+			x0 = coordinates[7:0] - min_x;
+			y0 = coordinates[15:8] - min_y;
+			x1 = coordinates[23:16] - min_x;
+			y1 = coordinates[31:24] - min_y;
 			if(draw_done == 1'b1)
 				next_state = WAIT3_1;
 			else
@@ -101,10 +132,10 @@ module bresenham_controller
 		DRAW3_2: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
-			x0 = coordinates[7:0];
-			y0 = coordinates[15:8];
-			x1 = coordinates[39:32];
-			y1 = coordinates[47:40];
+			x0 = coordinates[7:0] - min_x;
+			y0 = coordinates[15:8] - min_y;
+			x1 = coordinates[39:32] - min_x;
+			y1 = coordinates[47:40] - min_y;
 			if(draw_done == 1'b1)
 				next_state = WAIT3_2;
 			else
@@ -122,10 +153,10 @@ module bresenham_controller
 		DRAW3_3: begin
 			draw_en = 1'b1;
 			bla_done = 1'b0;
-			x0 = coordinates[23:16];
-			y0 = coordinates[31:24];
-			x1 = coordinates[39:32];
-			y1 = coordinates[47:40];
+			x0 = coordinates[23:16] - min_x;
+			y0 = coordinates[31:24] - min_y;
+			x1 = coordinates[39:32] - min_x;
+			y1 = coordinates[47:40] - min_y;
 			if(draw_done == 1'b1)
 				next_state = DONE;
 			else
