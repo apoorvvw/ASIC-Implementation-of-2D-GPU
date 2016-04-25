@@ -16,6 +16,7 @@ module bresenham(
 	input wire [7:0] y1,
 	input reg [4095:0] line_buffer,
 	input wire start,
+	input wire reset_buff,
 	output reg x,
 	output reg y,
 	output reg test,
@@ -54,7 +55,7 @@ module bresenham(
 	integer print = 0;
 	//reg [63:0] [63:0] pic;
 	
-	typedef enum logic [2:0] {IDLE, CALC, PROCESS, DONE } state_type;
+	typedef enum logic [2:0] {IDLE, CALC, PROCESS, RESET, DONE} state_type;
 	state_type next_state , current_state;
 
 	//DataFlow
@@ -99,10 +100,15 @@ module bresenham(
 				nextErr = deltaX - deltaY;
 				nextX = x0_mod;
 				nextY = y0_mod;
-				if (start) begin
+				if(reset_buff == 1'b1)
+					next_state = RESET;
+				else if (start) begin
 					next_state = CALC;
 					nextETwo = 2 * currentErr;					
 				end
+				else
+					next_state = IDLE;
+					
 
 				
 			end
@@ -143,6 +149,18 @@ module bresenham(
 					
 				end 
 
+			end
+			
+			RESET:
+			begin
+				picture = 4096'd0;
+				if (start) begin
+					next_state = CALC;
+					nextETwo = 2 * currentErr;					
+				end
+				else
+					next_state = RESET;
+				
 			end
 
 			DONE: begin
