@@ -13,7 +13,7 @@ module bla_wrapper
 	input logic vertice_num,
 	input logic bla_en,
 	input logic [47:0]coordinates,
-	output logic [4159:0] line_buffer,
+	output logic [4095:0] line_buffer,
 	output logic bla_done
 );
 	reg [7:0] x0;
@@ -24,7 +24,7 @@ module bla_wrapper
 	reg x;
 	reg y;
 	reg draw_done;
-	
+	reg [63:0] [63:0] picture;
 bresenham BLA
 (
 	.clk(clk),
@@ -33,10 +33,11 @@ bresenham BLA
 	.y0(y0),
 	.x1(x1),
 	.y1(y1),
-	.start(draw_en)
+	.start(draw_en),
 	.x(x),
 	.y(y),
 	.line_buffer(line_buffer),
+	.picture(picture),
 	.done(draw_done)
 );
 
