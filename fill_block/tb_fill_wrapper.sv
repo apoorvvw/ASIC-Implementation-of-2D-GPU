@@ -11,17 +11,28 @@ module tb_fill_wrapper ();
 	
 	// SRAM configuation parameters (based on values set in wrapper file)
 	localparam TB_CLK_PERIOD	= 6.0;	// Read/Write delays are 5ns and need ~1 ns for wire propagation
-	localparam TB_ADDR_SIZE_BITS	= 30; 	// 16 => 64K Words in Memory
+	localparam TB_ADDR_SIZE_BITS	= 24; 	// 16 => 64K Words in Memory
 	localparam TB_DATA_SIZE_WORDS	= 64;		// Single word access (only a demo case, can access arbitraliy many bytes during an access but all accesses must be the number of words wide)
 	localparam TB_WORD_SIZE_BYTES	= 3;		// Single byte words (only a demo case, words can be as large as 3 bytes)
-	localparam TB_ACCES_SIZE_BITS	= (TB_DATA_SIZE_WORDS * TB_WORD_SIZE_BYTES * 8);
 	
+	localparam TB_ACCES_SIZE_BITS	= (TB_DATA_SIZE_WORDS * TB_WORD_SIZE_BYTES * 8);
+	localparam TB_CAPACITY_WORDS	= (2 ** (TB_ADDR_SIZE_BITS-1));
+	localparam TB_MAX_ADDRESS			= (TB_CAPACITY_WORDS - 1);
+	localparam TB_WORD_SIZE_BITS	= (TB_WORD_SIZE_BYTES * 8);
+	localparam TB_MAX_WORD_BIT		= (TB_WORD_SIZE_BITS - 1);
+	localparam TB_ACC_SIZE_BITS		= (TB_WORD_SIZE_BITS * TB_DATA_SIZE_WORDS);
+	localparam TB_MAX_ACC_BIT			= (TB_ACC_SIZE_BITS - 1);
+	
+	localparam TB_MAX_WORD	= ((2 ** (TB_WORD_SIZE_BYTES * 8)) - 1);
+	localparam TB_ZERO_WORD	= 0;
+	localparam TB_MAX_ACC		= ((2 ** TB_ACCES_SIZE_BITS) - 1);
+	localparam TB_ZERO_ACC	= 0;	
 	
 	// Test bench variables
-	integer unsigned tb_init_file_number;	// Can't be larger than a value of (2^31 - 1) due to how VHDL stores unsigned ints/natural data types
-	integer unsigned tb_dump_file_number;	// Can't be larger than a value of (2^31 - 1) due to how VHDL stores unsigned ints/natural data types
-	integer unsigned tb_start_address;	// The first address to start dumping memory contents from
-	integer unsigned tb_last_address;		// The last address to dump memory contents from
+	reg unsigned [(TB_ADDR_SIZE_BITS-1):0] tb_init_file_number;	// Can't be larger than a value of (2^31 - 1) due to how VHDL stores unsigned ints/natural data types
+	reg unsigned [(TB_ADDR_SIZE_BITS-1):0] tb_dump_file_number;	// Can't be larger than a value of (2^31 - 1) due to how VHDL stores unsigned ints/natural data types
+	reg unsigned [(TB_ADDR_SIZE_BITS-1):0] tb_start_address;	// The first address to start dumping memory contents from
+	reg unsigned [(TB_ADDR_SIZE_BITS-1):0] tb_last_address;		// The last address to dump memory contents from
 	
 	reg tb_mem_clr;		// Active high strobe for at least 1 simulation timestep to zero memory contents
 	reg tb_mem_init;	// Active high strobe for at least 1 simulation timestep to set the values for address in
@@ -31,10 +42,6 @@ module tb_fill_wrapper ();
 										// Only the locations between the "tb_start_address" and "tb_last_address" (inclusive) will be dumped
 	reg tb_verbose;		// Active high enable for more verbose debuging information
 	
-	
-	reg [(TB_ADDR_SIZE_BITS - 1):0]		tb_address; 		// The address of the first word in the access
-	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_read_data;		// The data read from the SRAM
-	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_write_data;	// The data to be written to the SRAM
 	
 	reg tb_clk;
     reg tb_n_rst;
@@ -72,43 +79,65 @@ module tb_fill_wrapper ();
 		.layer_num(tb_layer_num), 
 		.line_buffer(tb_line_buffer),
 	
-		.init_file_number(tb_init_file_number),
-		.dump_file_number(tb_dump_file_number),
-		.mem_clr(tb_mem_clr), 
-		.mem_init(tb_mem_init),
-		.mem_dump(tb_mem_dump),
-		.start_address(tb_start_address),
-		.last_address(tb_last_address),
-		.verbose(tb_verbose)
+		.init_file_number(tb_init_file_number),//default, do not change its value
+		.dump_file_number(tb_dump_file_number),//default, do not change its value
+		.mem_clr(tb_mem_clr), //default, do not change its value
+		.mem_init(tb_mem_init),//default, do not change its value
+		.mem_dump(tb_mem_dump),//default, do not change its value
+		.start_address(tb_start_address),//default, do not change its value
+		.last_address(tb_last_address),//default, do not change its value
+		.verbose(tb_verbose)//default, do not change its value
 	);
 	
 	initial
     begin
-    	
+    	tb_n_rst = 0;
+    	#TB_CLK_PERIOD;
+    	tb_n_rst = 1;
+    	tb_fill_en = 0;
+    	#TB_CLK_PERIOD;
     	// Initialize all test bench control signals and DUT inputs
-		tb_mem_clr					<= 0;
-		tb_mem_init					<= 0;
-		tb_mem_dump					<= 0;
-		tb_verbose					<= 0;
-		tb_init_file_number	<= 0;
-		tb_dump_file_number	<= 0;
-		tb_start_address		<= 0;
-		tb_last_address			<= 0;
+		tb_mem_clr					<= 0;//default, do not change its value
+		tb_mem_init					<= 0;//default, do not change its value
+		tb_mem_dump					<= 0;//default, do not change its value
+		tb_verbose					<= 0;//default, do not change its value
+		tb_init_file_number	<= 0;//default, do not change its value
+		tb_dump_file_number	<= 0;//default, do not change its value
+		tb_start_address		<= 0;//default, do not change its value
+		tb_last_address			<= 0;//default, do not change its value
 		
 		#(TB_CLK_PERIOD * 10);
 		tb_line_buffer = '0;
 		tb_line_buffer[0] = 		1'b1;
+		tb_line_buffer[63] = 1'b1;
 		tb_line_buffer[65:64] = 	2'b11;
 		tb_line_buffer[130:128] =   3'b101;
 		tb_line_buffer[195:192] =   4'b1001;
 		tb_line_buffer[260:256] =   5'b11111;
-		
+		tb_color_code = 24'hFF0000;
 		tb_coordinates = 48'hC8C8C8CCCCCCC;
-		tb_layer_num = 1;
+		tb_layer_num = 0;
 		#TB_CLK_PERIOD;
+		tb_fill_en = 1;
 		#TB_CLK_PERIOD;
+		tb_fill_en = 0;
+		#TB_CLK_PERIOD;
+		for(;;)
+		begin
+			#TB_CLK_PERIOD;
+			if(tb_done == 1)
+				break;
+		end
+		// Test Memory Dump feature
+		$info("Testing Memory Dump Feature");
+		tb_mem_dump					<= 1;
+		tb_dump_file_number	<=	0;
+		tb_start_address		<= 0;
+		tb_last_address			<= TB_MAX_ADDRESS;
 		#TB_CLK_PERIOD;
 		
+		tb_mem_dump	<= 0;
+
     end
 endmodule
 	
