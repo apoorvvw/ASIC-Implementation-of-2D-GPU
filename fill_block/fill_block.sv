@@ -105,7 +105,7 @@ module fill_block
 	reg [5:0]adr2;
 	reg found_flag;
 	
-   typedef enum logic [3:0] {IDLE, MATH, READROW, WAIT1, WAIT2, FILL, WAIT3, WAIT4, DONE} 
+   typedef enum logic [2:0] {IDLE, FILL, WAIT1, WAIT2, UPDATE, DONE} 
 	state_type;
 	state_type state, next_state;
     always_ff @ (posedge clk, negedge n_rst)
@@ -134,12 +134,12 @@ module fill_block
     always_comb
     begin
     
-    	nextaddress = currentaddress;
-    	address = 24'h000000;
+    	
+
     	read_enable = 0;
     	write_enable = 0;
-		found_flag = 0;
-		nexti = i;
+		
+		
 		
 		
 		if(row_start)
@@ -149,13 +149,25 @@ module fill_block
 		end
 		
 		
-		if(fill_start)
-		begin
+		
+		
+		
+		address = 24'h000000;
+		nexti = i;
+		nextaddress = currentaddress;
+		next_state = state;
+		found_flag = 0;
+		fill_done = 0;
+		case(state)
+        IDLE: begin
+            if(fill_start)
+            	next_state = FILL;
+        end
+        FILL: begin
 			write_data = read_data;
         	//load 64 * 8 * 3 bits from sram
             lineline = line_buffer[i*64+:64];
         	//find a1, find a2
-        	
             for (j = 0; j < 64; j++)
             begin
                 if(lineline[j] == 1'b1)
@@ -166,11 +178,8 @@ module fill_block
                 end             
             end
             
-            //if there is information on the line, do next step
-           case(state)
-           IDLE:
-            	
-            	
+            //if there is information on the line, do next ste
+            if(found_flag) begin
 		        for (j = 63; j >= 0; j--)
 		        begin
 		            if(lineline[j] == 1'b1)
@@ -205,16 +214,30 @@ module fill_block
 		       	
 		       	
 		    end
-		    
+		 	next_state = WAIT1;
+		end
+		WAIT1: begin
 		    address = currentaddress;
-		    write_enable = 1;	    
-		    nextaddress = currentaddress + 8'd256 * 24;
+		    write_enable = 1;	
+			next_state = WAIT2;
+		end
+		WAIT2: begin
+		    address = currentaddress;
+		    write_enable = 1;	
+			next_state = UPDATE;
+		end
+		UPDATE: begin
+		    nextaddress = currentaddress + 8'd256 * 5'd24;
 		    nexti = i + 1;
-	
-		    fill_done = 1;
-		    
+		    next_state = DONE;
+		   
         end
-       
+       	DONE: begin
+       		fill_done = 1;
+            if(fill_start & ~all_finish) 
+            	next_state = FILL;
+       	end
+       	endcase
 	end
 	assign all_finish = (i >= 64);
 	
