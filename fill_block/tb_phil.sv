@@ -92,7 +92,7 @@ module tb_phil ();
 		.last_address(tb_last_address),//default, do not change its value
 		.verbose(tb_verbose)//default, do not change its value
 	);
-
+	integer i;
 	initial
     begin
     	tb_n_rst = 0;
@@ -126,27 +126,21 @@ module tb_phil ();
 		#TB_CLK_PERIOD;
 		tb_math_start = 0;
 		#TB_CLK_PERIOD;
-		tb_row_start = 1;
-		#TB_CLK_PERIOD;
-		#TB_CLK_PERIOD;
-		#TB_CLK_PERIOD;
-		tb_row_start = 0;
-		#TB_CLK_PERIOD;
-		tb_fill_start = 1;
-		#(TB_CLK_PERIOD);
-		tb_fill_start = 0;
-		#(TB_CLK_PERIOD);
-		#(TB_CLK_PERIOD*10);
-		tb_fill_start = 1;
-		#(TB_CLK_PERIOD);
-		tb_fill_start = 0;
-		#(TB_CLK_PERIOD);
-		#(TB_CLK_PERIOD*10);
-		tb_fill_start = 1;
-		#(TB_CLK_PERIOD);
-		tb_fill_start = 0;
-		#(TB_CLK_PERIOD);
-		#(TB_CLK_PERIOD*10);		
+		for(i = 0; i < 100;i++)
+		begin
+			tb_row_start = 1;
+			#TB_CLK_PERIOD;
+			tb_row_start = 0;
+			#TB_CLK_PERIOD;
+			tb_fill_start = 1;
+			#(TB_CLK_PERIOD);
+			tb_fill_start = 0;
+			#(TB_CLK_PERIOD);
+			#(TB_CLK_PERIOD*10);
+			if(tb_all_finish)
+				break;
+		end		
+		$display("i is %d\n",i);
 		// Test Memory Dump feature
 		$info("Testing Memory Dump Feature");
 		tb_mem_dump					<= 1;
