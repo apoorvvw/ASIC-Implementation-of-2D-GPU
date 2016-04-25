@@ -6,11 +6,11 @@
 // Version:     1.0  Initial Design Entry
 // Description: the wrapper for the fill block
 
-
+//The fill at this stage wouldn't be able to fill in textures
 
 module fill_wrapper
 #(
-	ADDR_SIZE_BITS = 30,
+	ADDR_SIZE_BITS = 24,
 	WORD_SIZE_BYTES = 3,
 	DATA_SIZE_WORDS = 64
 	
@@ -29,13 +29,13 @@ module fill_wrapper
 	input logic [4095:0] line_buffer,
 
 	
-	input logic [29:0]init_file_number,
-	input logic [29:0]dump_file_number,
+	input logic [(ADDR_SIZE_BITS-1):0] init_file_number,
+	input logic [(ADDR_SIZE_BITS-1):0] dump_file_number,
 	input wire mem_clr,
 	input wire mem_init,
 	input wire mem_dump,
-	input logic [29:0]start_address,
-	input logic [29:0]last_address,
+	input logic [(ADDR_SIZE_BITS-1):0] start_address,
+	input logic [(ADDR_SIZE_BITS-1):0] last_address,
 	input wire verbose
 	
 );
@@ -46,7 +46,7 @@ module fill_wrapper
 	reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] write_data;
 	reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] read_data;
 	
-	reg math_start, math_done;
+	reg math_start;
 	reg row_start;
 	reg fill_start, fill_done;
 	reg all_finish;
@@ -56,15 +56,15 @@ module fill_wrapper
 		.clk(clk),
 		.n_rst(n_rst),
 		.fill_en(fill_en),
-		.math_done(math_done),
-		.fill_done(fill_done),
 		.all_finish(all_finish),
 		.math_start(math_start),
 		.row_start(row_start),
 		.fill_start(fill_start),
+		.fill_done(fill_done),
 		.done(done)
 	);
 
+	
 	fill_block FILL
 	(
 		.clk(clk),
@@ -80,7 +80,6 @@ module fill_wrapper
 		.math_start(math_start),
 		.row_start(row_start),
 		.fill_start(fill_start),
-		.math_done(math_done),
 		.fill_done(fill_done),
 		.all_finish(all_finish),
 		
@@ -94,7 +93,7 @@ module fill_wrapper
 	
 	on_chip_sram_wrapper SRAM
 	(
-		.init_file_number(init_file_name),
+		.init_file_number(init_file_number),
 		.dump_file_number(dump_file_number),
 		.mem_clr(mem_clr),
 		.mem_init(mem_init),
@@ -109,7 +108,6 @@ module fill_wrapper
 		.write_data(write_data)
 
 	);
-
 
 
 
