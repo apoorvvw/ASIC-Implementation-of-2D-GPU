@@ -24,6 +24,7 @@ module bla_wrapper
 	reg x;
 	reg y;
 	reg draw_done;
+	reg reset_buff;
 	reg [63:0] [63:0] picture;
 bresenham BLA
 (
@@ -36,6 +37,7 @@ bresenham BLA
 	.start(draw_en),
 	.x(x),
 	.y(y),
+	.reset_buff(reset_buff),
 	.line_buffer(line_buffer),
 	.picture(picture),
 	.done(draw_done)
@@ -49,6 +51,7 @@ bresenham_controller BLA_CTRL
 	.bla_en(bla_en),
 	.vertice_num(vertice_num),
 	.coordinates(coordinates),
+	.reset_buff(reset_buff),
 	.x0(x0),
 	.y0(y0),
 	.x1(x1),
