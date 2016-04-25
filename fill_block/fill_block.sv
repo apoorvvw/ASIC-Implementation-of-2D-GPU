@@ -21,7 +21,7 @@ texture3		139264~143359
 */
 module fill_block
 #(
-	ADDR_SIZE_BITS = 30,
+	ADDR_SIZE_BITS = 24,
 	WORD_SIZE_BYTES = 3,
 	DATA_SIZE_WORDS = 64
 	
@@ -40,7 +40,6 @@ module fill_block
 	input logic math_start,
 	input logic row_start,
 	input logic fill_start,
-	output reg math_done,
 	output logic fill_done,
 	output logic all_finish,
 	
@@ -48,7 +47,7 @@ module fill_block
 	output logic write_enable,
 	input logic [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] read_data,
 	output logic [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] write_data,
-	output logic [(ADDR_SIZE_BITS-1):0] address
+	output reg [(ADDR_SIZE_BITS-1):0] address
 
 );
     reg [31:0] i,nexti,j;
@@ -75,11 +74,10 @@ module fill_block
        	    	i <= nexti;
 		end
     end
-    
+
    //find ymin,xmin
     always_comb 
     begin
-        math_done = 0;
         nextxmin = xmin;
         nextymin = ymin;
         if(math_start == 1'b1)
@@ -96,46 +94,60 @@ module fill_block
                 nextymin = coordinates[31:24];
             if (coordinates[47:40] < nextymin)
                 nextymin = coordinates[39:32];
-
-            math_done = 1'b1;
+			
         end
 
     end
     
-	reg [31:0]currentaddress, nextaddress;
+	reg unsigned [23:0]currentaddress, nextaddress;
 	reg [63:0]lineline;
 	reg [5:0]adr1;
 	reg [5:0]adr2;
 	reg found_flag;
-   
-    always_ff @ (posedge clk)
+	
+   typedef enum logic [3:0] {IDLE, MATH, READROW, WAIT1, WAIT2, FILL, WAIT3, WAIT4, DONE} 
+	state_type;
+	state_type state, next_state;
+    always_ff @ (posedge clk, negedge n_rst)
 	begin
-  		if( i == 0)
-  		begin
-		    if(layer_num == 0)
-		        currentaddress = 32'd0 + ymin * 256 * 24 + xmin * 24;
-		    else
-		        currentaddress = 32'd65536 + ymin * 256 * 24 + xmin * 24;
+	    if(n_rst == 0) begin
+	    	currentaddress <= 24'h000000;
+	    	state <= IDLE;
+	   	end else begin
+	   		state <= next_state;
+	  		if( i == 0)
+	  		begin
+				if(layer_num == 0)
+				    currentaddress <= 24'h000000 + ymin * 24'h000100  + xmin;
+				else
+				    currentaddress <= 24'h010000 + ymin * 24'h000100 + xmin;
+			end
+			else begin
+				currentaddress <= nextaddress;
+			end
 		end
-		else
-			currentaddress = nextaddress;
 		
    end
 	
    //get sdram address for the xmin,ymin for layer buffer
-   
+   	
     always_comb
     begin
+    
     	nextaddress = currentaddress;
-    	address = '0;
+    	address = 24'h000000;
     	read_enable = 0;
+    	write_enable = 0;
+		found_flag = 0;
+		nexti = i;
+		
+		
 		if(row_start)
 		begin
 			address = currentaddress;
 			read_enable = 1'b1;
 		end
-		write_enable = 0;
-		found_flag = 0;
+		
 		
 		if(fill_start)
 		begin
@@ -155,9 +167,11 @@ module fill_block
             end
             
             //if there is information on the line, do next step
-            if (found_flag == 1) begin
+           case(state)
+           IDLE:
             	
-		        for (j = 63; j > 0; j--)
+            	
+		        for (j = 63; j >= 0; j--)
 		        begin
 		            if(lineline[j] == 1'b1)
 		            begin
@@ -182,7 +196,7 @@ module fill_block
  							if(j > adr2) begin
 		       				    break;
 		       				end else begin
-		       					write_data[(j * WORD_SIZE_BYTES * 3)+:24] = color_code;  
+		       					write_data[(j * 24)+:24] = color_code;  
 		       				end    
 		       			end
 		       			
@@ -196,10 +210,11 @@ module fill_block
 		    write_enable = 1;	    
 		    nextaddress = currentaddress + 8'd256 * 24;
 		    nexti = i + 1;
+	
 		    fill_done = 1;
 		    
         end
-        
+       
 	end
 	assign all_finish = (i >= 64);
 	
