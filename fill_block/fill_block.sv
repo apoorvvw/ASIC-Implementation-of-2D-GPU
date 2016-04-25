@@ -228,7 +228,7 @@ module fill_block
 			next_state = UPDATE;
 		end
 		UPDATE: begin
-		    nextaddress = currentaddress + 24'd256 * 24'd24;
+		    nextaddress = currentaddress + 24'd256;
 		    nexti = i + 1;
 		    next_state = DONE;
 		   
