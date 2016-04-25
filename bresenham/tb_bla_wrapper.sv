@@ -61,6 +61,7 @@ always
 		y2 = 8'd23;
 		tb_coordinates = {y2, x2, y1, x1, y0, x0};
 		@(negedge tb_clk);
+		tb_bla_en = 1'b0;
 		@(negedge tb_clk);
 		/*if(tb_draw_en == 1'b1 && tb_bla_done == 1'b0 && tb_x0 == 8'd0 && tb_y0 == 8'd0 && tb_x1 == 8'b11111111 && tb_y1 == 8'b11111111)
 			$info("Draw 3 1 looks good");
