@@ -10,7 +10,6 @@ module main_controller
 (
 	input wire clk,
 	input wire n_rst,
-//	input wire decode_done,
 	input wire inst_type,
 	input wire alpha_done,
 	input wire fifo_empty,
@@ -18,7 +17,6 @@ module main_controller
 	input wire config_in,
 	input wire config_done,
 	input wire fill_done,
-//	input wire decode_full,
 	output reg read_en,
 	output reg alpha_en,
 	output reg bla_en,
