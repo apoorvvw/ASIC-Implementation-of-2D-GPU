@@ -53,12 +53,12 @@ always
 		@(negedge tb_clk);
 		tb_bla_en = 1'b1;
 		tb_vertice_num = 1'b1;
-		x0 = 8'd10;
-		y0 = 8'd12;
-		x1 = 8'd69;
-		y1 = 8'd45;
-		x2 = 8'd24;
-		y2 = 8'd25;
+		x0 = 8'd0;
+		y0 = 8'd0;
+		x1 = 8'd23;
+		y1 = 8'd23;
+		x2 = 8'd0;
+		y2 = 8'd23;
 		tb_coordinates = {y2, x2, y1, x1, y0, x0};
 		@(negedge tb_clk);
 		@(negedge tb_clk);
@@ -102,24 +102,9 @@ always
 		else
 			$error("Not in idle state");*/
 		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
-		@(negedge tb_clk);
+
 		i = 0;
+		if(tb_bla_done == 1'b1)
+			tb_bla_en = 1'b0;
 	end
 endmodule
