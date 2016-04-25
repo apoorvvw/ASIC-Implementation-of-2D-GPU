@@ -1,5 +1,5 @@
 // $Id: $
-// File name:   tb_fill_controller.sv
+// File name:   tb_bresenham.sv
 // Created:     4/23/2016
 // Author:      Pooja Kale
 // Lab Section: 04
@@ -60,15 +60,16 @@ module tb_fill_controller();
 		#(CLK_PERIOD)
 		tb_n_rst = 1;  
 		tb_fill_en = 1'b1; 
-		#(CLK_PERIOD)
-		#(CLK_PERIOD)
-		tb_math_done = 1'b1;
-		#(CLK_PERIOD)
-		#(CLK_PERIOD)
 
 		#(CLK_PERIOD)
 		#(CLK_PERIOD)
-		tb_fill_done = 1'b0; 
+		#(CLK_PERIOD)
+		tb_math_done = 1'b1;
+
+		#(CLK_PERIOD)
+		#(CLK_PERIOD)
+		tb_fill_done = 1'b1; 
+		#(CLK_PERIOD)
 		#(CLK_PERIOD)
 		#(CLK_PERIOD)
 		tb_all_finish = 1'b1;
