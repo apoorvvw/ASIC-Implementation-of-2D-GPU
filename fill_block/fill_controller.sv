@@ -83,8 +83,7 @@ typedef enum logic [3:0] {IDLE, MATH, WAIT1, READROW, WAIT2, FILL, WAIT3, DONE}
 		DONE:
 		begin
 			done = 1'b1;
-			if(fill_en == 1'b1)
-				next_state = MATH;
+			next_state = IDLE;
 		end
 		endcase
 	end
