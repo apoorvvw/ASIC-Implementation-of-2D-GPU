@@ -119,9 +119,9 @@ module fill_block
 	  		if( nexti == 0)
 	  		begin
 				if(layer_num == 0)
-				    currentaddress <= 24'h000000 + ymin * 24'h000100  + xmin;
+				    currentaddress <= 0  + ymin * 256  + xmin;
 				else
-				    currentaddress <= 24'h010000 + ymin * 24'h000100 + xmin;
+				    currentaddress <= 65536 + ymin * 256 + xmin;
 			end
 			else begin
 				currentaddress <= nextaddress;
@@ -135,13 +135,8 @@ module fill_block
     always_comb
     begin
     
-    	
-
     	read_enable = 0;
     	write_enable = 0;
-		
-		
-		
 		
 		if(row_start)
 		begin
@@ -149,10 +144,7 @@ module fill_block
 			read_enable = 1'b1;
 		end
 		
-		
-		
-		
-		
+
 		address = 24'h000000;
 		nexti = i;
 		nextaddress = currentaddress;
@@ -166,7 +158,7 @@ module fill_block
         end
         FILL: begin
 			write_data = read_data;
-        	//load 64 * 8 * 3 bits from sram
+        	//load 64 bits from sram
             lineline = line_buffer[i*64+:64];
         	//find a1, find a2
             for (j = 0; j < 64; j++)
