@@ -53,7 +53,7 @@ module bresenham(
 	integer i = 0;
 	//reg [63:0] [63:0] pic;
 	
-	typedef enum logic [3:0] {IDLE, CALC, CALC_WAIT, PROCESS, PROCESS_WAIT, PROCESS_WAIT2, RESET, DONE} state_type;
+	typedef enum logic [2:0] {IDLE, CALC, CALC_WAIT, PROCESS, PROCESS_WAIT, RESET, DONE} state_type;
 	state_type next_state , current_state;
 
 	//DataFlow
@@ -154,11 +154,6 @@ module bresenham(
 			end
 			PROCESS_WAIT:
 			begin
-				next_state = PROCESS_WAIT2;
-			end
-			
-			PROCESS_WAIT2:
-			begin
 				next_state = CALC;
 			end
 			
@@ -167,7 +162,7 @@ module bresenham(
 				picture = 4096'd0;
 				line_buffer = 4096'd0;
 				if (start) begin
-					next_state = CALC;
+					next_state = IDLE;
 					nextETwo = 2 * currentErr;					
 				end
 				else
