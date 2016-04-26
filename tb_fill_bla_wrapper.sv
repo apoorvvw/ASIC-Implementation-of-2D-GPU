@@ -133,6 +133,22 @@ module tb_fill_bla_wrapper();
 		tb_n_rst = 1'b1;
     	#TB_CLK_PERIOD;
     	
+
+		tb_inst_type = 1'b0;
+		tb_vertice_num = 1'b1;
+		x0 = 8'd2;
+		y0 = 8'd2;
+		x1 = 8'd62;
+		y1 = 8'd2;
+		x2 = 8'd32;
+		y2 = 8'd60;
+		tb_coordinates = {y2, x2, y1, x1, y0, x0};
+
+		tb_layer_num = 1'b0;
+		tb_fill_type = 1'b0;
+		tb_color_code = 24'hFFD700;
+		tb_texture_code = '0;	
+		
     	// Initialize all test bench control signals and DUT inputs
 		tb_mem_clr					<= 0;//default, do not change its value
 		tb_mem_init					<= 0;//default, do not change its value
@@ -144,27 +160,13 @@ module tb_fill_bla_wrapper();
 		tb_last_address			<= 0;//default, do not change its value
 		#(TB_CLK_PERIOD * 10);
 		
-		
-		tb_config_in = 1'b1;
+    	tb_config_in = 1'b1;
 		#TB_CLK_PERIOD;
 		tb_config_in = 1'b0;
 		tb_config_done = 1'b1;
 		#TB_CLK_PERIOD;
 		tb_config_done = 1'b0;
 		#TB_CLK_PERIOD;
-		tb_inst_type = 1'b0;
-		tb_vertice_num = 1'b1;
-		x0 = 8'd0;
-		y0 = 8'd0;
-		x1 = 8'd23;
-		y1 = 8'd23;
-		x2 = 8'd0;
-		y2 = 8'd23;
-		tb_coordinates = {y2, x2, y1, x1, y0, x0};
-		tb_layer_num = 1'b0;
-		tb_fill_type = 1'b0;
-		tb_color_code = 24'hFF0000;
-		tb_texture_code = '0;	
 		
 		while(1 == 1)
 		begin
