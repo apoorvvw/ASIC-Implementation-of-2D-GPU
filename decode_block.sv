@@ -7,11 +7,11 @@
 // Description: Decode Block for Decoding instructions
 module decode_block
 (
-	input wire fifo_data[81:0],
-	output reg coordinates[47:0],
-	output reg alpha_val[3:0],
-	output reg texture_code[1:0],
-	output reg color_code[23:0],
+	input wire [81:0] fifo_data,
+	output reg [47:0] coordinates,
+	output reg [3:0] alpha_val,
+	output reg [1:0] texture_code,
+	output reg [23:0] color_code,
 	output reg layer_num,
 	output reg vertice_num,
 	output reg inst_type,
