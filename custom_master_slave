@@ -55,6 +55,33 @@ logic new_data_flag;
 typedef enum {IDLE, WRITE} state_t;
 state_t state, nextState;
 
+	 //wire br_clk,
+	 //wire br_n_rst,
+	 wire [7:0] br_x0,
+	 wire [7:0] br_y0,
+	 wire [7:0] br_x1,
+	 wire [7:0] br_y1,
+	 reg [4095:0] br_line_buffer,
+	 wire br_start,
+	 wire br_reset_buff,
+	 reg br_x,
+	 reg br_y,
+	 reg br_test,
+	 reg [63:0] [63:0] br_picture,
+	 reg br_done
+
+bresenham BREH (
+		.r_clk(clk),
+		.w_clk(clk),
+		.n_rst(reset_n),
+		.r_enable(br_r_enable),
+		.w_enable(br_w_enable),
+		.w_data(br_w_data),
+		.r_data(br_r_data),
+		.empty(br_empty),
+		.full(br_full)
+	);
+
 assign display_data = csr_registers[slave_address];
 
 // Slave side 
@@ -99,11 +126,18 @@ always_comb begin
 	master_address = address;
 	case( state ) 
 		WRITE: begin
-			master_write = 1; //write enable must be set high to write to SDRAM
+			master_write = 1; //write enable must3 be set high to write to SDRAM
 			master_address =  address; //address in SDRAM to write to (initialized to SDRAM's base address and same place that pixel buffer is looking at)
-			master_writedata = 32'h0000FF00; //(Blue = 32'h00FF0000, Green = 32'h0000FF00, Red = 32'h000000FF)
+			
+			if(master_address > 32'h08015000)begin 
+				master_writedata = 32'h000000FF; //(Red = 32'h00FF0000, Green = 32'h0000FF00, Blue = 32'h000000FF)
+			end 
+			else 
+			begin
+				master_writedata = 32'h0000FF00; //(Blue = 32'h00FF0000, Green = 32'h0000FF00, Red = 32'h000000FF)
+			end
 			if (!master_waitrequest) begin //if not currently writing, go on to next address, otherwise wait for write to finish
-				nextAddress =  address + 4; // address is in hex, and each is 32 bits wide, so move up by 4 hex
+				nextAddress = address + 4; // address is in hex, and each is 32 bits wide, so move up by 4 hex
 				if(nextAddress == 32'h08CD2000) //if at the end of a 640x480 image space then go to idle (no need to write the entire SDRAM over)
 				begin
 					nextState = IDLE;
@@ -124,5 +158,4 @@ always_comb begin
 end
 
 endmodule
-
 
