@@ -28,6 +28,7 @@ module custom_master_slave #(
 //	output logic slave_waitrequest,   			// See the Avalon Specifications for details  on how to use them.
         output logic [DATAWIDTH-1:0] slave_readdata,
 
+
 	// Bus Master Interface
         output logic [MASTER_ADDRESSWIDTH-1:0] master_address,
         output logic [DATAWIDTH-1:0] master_writedata,
