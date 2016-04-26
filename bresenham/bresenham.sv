@@ -18,7 +18,6 @@ module bresenham(
 	input wire reset_buff,
 	output reg x,
 	output reg y,
-	output reg test,
 	output reg [63:0] [63:0] picture,
 	output reg [4095:0] line_buffer,
 	output reg done
