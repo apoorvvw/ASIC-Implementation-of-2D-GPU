@@ -14,13 +14,13 @@ module bresenham(
 	input wire [7:0] y0,
 	input wire [7:0] x1,
 	input wire [7:0] y1,
-	input reg [4095:0] line_buffer,
 	input wire start,
 	input wire reset_buff,
 	output reg x,
 	output reg y,
 	output reg test,
 	output reg [63:0] [63:0] picture,
+	output reg [4095:0] line_buffer,
 	output reg done
 );
 
@@ -51,11 +51,10 @@ module bresenham(
 	logic [5:0] y1_mod;
 	
 	
-	integer row = 0;
-	integer print = 0;
+	integer i = 0;
 	//reg [63:0] [63:0] pic;
 	
-	typedef enum logic [2:0] {IDLE, CALC, PROCESS, RESET, DONE} state_type;
+	typedef enum logic [3:0] {IDLE, CALC, CALC_WAIT, PROCESS, PROCESS_WAIT, PROCESS_WAIT2, RESET, DONE} state_type;
 	state_type next_state , current_state;
 
 	//DataFlow
@@ -96,6 +95,7 @@ module bresenham(
 		case(current_state)
 		
 			IDLE: begin
+				i = 0;
 				done = 1'b0;
 				nextErr = deltaX - deltaY;
 				nextX = x0_mod;
@@ -108,19 +108,22 @@ module bresenham(
 				end
 				else
 					next_state = IDLE;
-					
-
 				
 			end
 			
 			CALC:
 			begin
 				nextETwo = 2 * currentErr;
+				next_state = CALC_WAIT;
+			end
+			CALC_WAIT:
+			begin
 				next_state = PROCESS;
 			end			
 			
 			PROCESS: begin
 				picture[currentY][currentX] = 1'b1;
+				line_buffer [currentY * 64 + currentX] = 1'b1;
 				if (currentX == x1_mod && currentY == y1_mod)
 				begin
 					next_state = DONE;   
@@ -145,15 +148,25 @@ module bresenham(
 						nextY = $signed(currentY) + $signed(sy); 
 					end
 										
-					next_state = CALC;
+					next_state = PROCESS_WAIT;
 					
 				end 
 
+			end
+			PROCESS_WAIT:
+			begin
+				next_state = PROCESS_WAIT2;
+			end
+			
+			PROCESS_WAIT2:
+			begin
+				next_state = CALC;
 			end
 			
 			RESET:
 			begin
 				picture = 4096'd0;
+				line_buffer = 4096'd0;
 				if (start) begin
 					next_state = CALC;
 					nextETwo = 2 * currentErr;					
@@ -166,16 +179,6 @@ module bresenham(
 			DONE: begin
 				next_state = IDLE;
 				done = 1'b1;
-				if (print == 0)
-				begin  
-				
-					for (int k = 0 ; k < 64; k ++) begin
-						$display("Picture:  %b", picture[k]);
-					end
-				
-					print = 1; 
-				
-				end 
 			end	
 		endcase
 		//OUTPUT LOGIC
