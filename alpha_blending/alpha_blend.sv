@@ -27,6 +27,7 @@ module alpha_blend
 )
 (
     input wire clk,
+    input wire n_rst,
    	input wire alpha_en,
    	input wire [3:0] alpha_value,
    	output reg alpha_done,
@@ -34,13 +35,11 @@ module alpha_blend
    	output reg read_enable,
    	output reg [(ADDR_SIZE_BITS-1):0] address,
 	input logic [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] read_data,
-	
-
 	output reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] write_data
 	
 ); 
 
-	reg [31:0] i,nexti,j;
+	reg [31:0] i,next_i,j;
 	reg [7:0] color1, color2;
 	reg [(ADDR_SIZE_BITS-1):0] currentaddress, nextaddress;
 	typedef enum logic [3:0] {IDLE, READ1, WAIT1, READ2, WAIT2, BLEND, UPDATE, DONE} 
@@ -51,17 +50,21 @@ module alpha_blend
 	always_ff @ (posedge clk, negedge n_rst)
 	begin
 		if(n_rst == 0)
+		begin
 			state <= IDLE;   
 			i <= '0; 
 			data1 <= '0;
 			data2 <= '0;
 			currentaddress <= '0;
+		end
 		else
+		begin
 			state <= next_state;	    
 			i <= next_i;
 			data1 <= next_data1;
 			data2 <= next_data2;
 			currentaddress <= nextaddress;
+		end
 	end
 	
 	
@@ -74,14 +77,14 @@ module alpha_blend
 		address = 0;
 		next_data1 = data1;
 		next_data2 = data2;
-		nextaddress = currentadress;
+		nextaddress = currentaddress;
 		case(state)
 		IDLE: begin
 			if(alpha_en)
-				next_state = READ;
+				next_state = READ1;
 		end
 		READ1: begin
-			if(currentaddress = 24'd65536)
+			if(currentaddress == 24'd65536)
 			begin
 				next_state = DONE;
 			end else begin
@@ -92,9 +95,9 @@ module alpha_blend
 		end
 		WAIT1: begin
 			next_data1 = read_data;
-			next_state = WAIT1;
+			next_state = READ2;
 		end
-		READ1: begin
+		READ2: begin
 			address = currentaddress + 24'd65536;
 			read_enable = 1'b1;
 			next_state = WAIT2;
@@ -111,14 +114,15 @@ module alpha_blend
 				color2 = data2[j * 8+: 8];
 				if(color1 == color2)
 				begin
-					write_data[j * 8: 8] = color1;
+					write_data[j * 8+: 8] = color1;
 				end
 				else
 				begin
-					write_data[j * 8: 8] = color1 * alpha_value / 4'd10 + color2 * (4'd10 - alpha_value) / 4'd10;
+					write_data[j * 8+: 8] = color1 * alpha_value / 4'd10 + color2 * (4'd10 - alpha_value) / 4'd10;
 				end
 
-			end
+			end	
+			next_state = UPDATE;
 		end
 		UPDATE: begin
 			nextaddress = currentaddress + 8'd64;
@@ -127,8 +131,9 @@ module alpha_blend
 		DONE: begin
 			alpha_done = 1;
 			if(alpha_en)
-				next_state =READ1;
+				next_state = READ1;
 		end		
+		
 		endcase
 	
 	end
