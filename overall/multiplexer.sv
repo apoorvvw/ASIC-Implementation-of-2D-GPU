@@ -10,12 +10,17 @@ module mutliplexer.sv
 (
 	input wire alpha_en,
 	input wire fill_en,
+	
 	input wire f_read_enable,
 	input wire f_write_enable,
 	input wire [23:0] f_address,
 	input wire [1535:0]f_write_data,
+	
 	input wire a_read_enable,
+	input wire a_write_enable,
 	input wire [23:0] a_address,
+	input wire [1535:0]a_write_data,
+		
 	output wire read_enable,
 	output wire [23:0]address,
 	output wire [1535:0]write_data,
@@ -30,7 +35,9 @@ module mutliplexer.sv
 		wrire_data = '0;
 		if(alpha_en) begin
 			read_enable = a_read_enable;
+			write_enable = a_write_enable;
 			address = a_address;
+			write_data = a_write_data;
 		end else if (fill_en) begin
 			read_enable = f_read_enable;
 			write_enable = f_write_enable;
