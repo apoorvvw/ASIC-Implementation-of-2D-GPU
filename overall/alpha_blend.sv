@@ -136,6 +136,7 @@ module alpha_blend
 		    address = currentaddress + 24'd143360;
 		    write_enable = 1;	
 			next_state = UPDATE;
+		end
 			
 		UPDATE: begin
 			nextaddress = currentaddress + 8'd64;
@@ -145,7 +146,6 @@ module alpha_blend
 			alpha_done = 1;
 			next_state = IDLE;
 		end		
-		
 		endcase
 	
 	end
