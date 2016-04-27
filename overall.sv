@@ -50,7 +50,14 @@ module overall
 	reg fill_done;
 	reg alpha_done;
 	
-	reg [4095:0] line_buffer;
+	logic [4095:0] line_buffer;
+	
+	logic f_read_enable;
+	logic f_write_enable;
+	logic [23:0] f_address;
+	logic [1535:0] f_write_data;
+	logic a_read_enable;
+	logic [23:0] a_address;
 
 	/*
 	shubham FFIFFO
@@ -120,11 +127,11 @@ module overall
 		.color_code(color_code), //come from DECODE
 		.layer_num(layer_num), //come from DECODE
 		.line_buffer(line_buffer), //come from BLA
-		.read_enable(read_enable), //goes to sram
-		.write_enable(write_enable), //goes to sram
-		.address(address), //goes to sram
+		.read_enable(f_read_enable), //goes to sram
+		.write_enable(f_write_enable), //goes to sram
+		.address(f_address), //goes to sram
 		.read_data(read_data), //come from sram
-		.write_data(write_data) //goes to sram
+		.write_data(f_write_data) //goes to sram
 	);
 	
 	alpha_blend ALP
@@ -135,10 +142,27 @@ module overall
 	   	.alpha_value(alpha_val),
 	   	.alpha_done(alpha_done),
 	   	
-	   	.read_enable(read_enable),
-	   	.address(address),
+	   	.read_enable(a_read_enable),
+	   	.address(a_address),
 		.read_data(read_data),
 		.write_data(out)
 	
 	); 
+	
+	multiplexer MUX
+	(	
+		.alpha_en(alpha_en),
+		.fill_en(fill_en),
+		.f_read_enable(f_read_enable),
+		.f_write_enable(f_write_enable),
+		.f_address(f_address),
+		.f_write_data(f_write_data),
+		.a_read_enable(a_read_enable),
+		.a_address(a_address),
+		.read_enable(read_enable),
+		.write_enable(write_enable),
+		.address(address),
+		.write_data(write_data)
+	
+	);
 endmodule
