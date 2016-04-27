@@ -159,12 +159,13 @@ module overall
 		.fill_en(fill_en),
 		
 		.f_read_enable(f_read_enable),
-		.f_address(f_address),
-		
-		.a_read_enable(a_read_enable),
 		.f_write_enable(f_write_enable),
-		.a_address(a_address),
+		.f_address(f_address),
 		.f_write_data(f_write_data),
+		.a_read_enable(a_read_enable),
+		.a_write_enable(a_write_enable),
+		.a_address(a_address),
+		.a_write_data(a_write_data),
 		
 		.read_enable(read_enable),
 		.write_enable(write_enable),
