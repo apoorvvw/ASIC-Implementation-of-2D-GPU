@@ -46,7 +46,7 @@ begin
 	end
 	else
 	begin
-		alpha_val = fifo_data[3:1];
+		alpha_val = fifo_data[81:78];
 		coordinates[47:0] = '0;
 		texture_code[1:0] = '0;
 		color_code[23:0] = '0;
