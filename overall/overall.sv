@@ -27,7 +27,6 @@ module overall
 	input logic config_done,
 	output logic config_en,
 	
-	output logic out, //this is the output from the alpha blending, goes to SDRAM
 	output logic bla_done,
 	output logic fill_done,
 	output logic alpha_done
