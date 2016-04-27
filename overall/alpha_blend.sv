@@ -16,6 +16,8 @@ layerbuffer2 	65536~131071
 texture1    	131072~135167
 texture2		135168~139263
 texture3		139264~143359
+
+outputbuffer    143360~208895
 */
 
 module alpha_blend
@@ -32,6 +34,7 @@ module alpha_blend
    	input wire [3:0] alpha_value,
    	output reg alpha_done,
    	
+   	output reg write_enable,
    	output reg read_enable,
    	output reg [(ADDR_SIZE_BITS-1):0] address,
 	input logic [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] read_data,
@@ -42,7 +45,7 @@ module alpha_blend
 	reg [31:0] i,next_i,j;
 	reg [7:0] color1, color2;
 	reg [(ADDR_SIZE_BITS-1):0] currentaddress, nextaddress;
-	typedef enum logic [3:0] {IDLE, READ1, WAIT1, READ2, WAIT2, BLEND, UPDATE, DONE} 
+	typedef enum logic [3:0] {IDLE, READ1, WAIT1, READ2, WAIT2, BLEND, WAIT3, WAIT4, UPDATE, DONE} 
 	state_type;
 	state_type state, next_state;
 	reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] data1, next_data1, data2, next_data2;
@@ -122,8 +125,18 @@ module alpha_blend
 				end
 
 			end	
-			next_state = UPDATE;
+			next_state = WAIT3;
 		end
+		WAIT3: begin
+		    address = currentaddress + 24'd143360;
+		    write_enable = 1;	
+			next_state = WAIT4;
+		end
+		WAIT4: begin
+		    address = currentaddress + 24'd143360;
+		    write_enable = 1;	
+			next_state = UPDATE;
+			
 		UPDATE: begin
 			nextaddress = currentaddress + 8'd64;
 			next_state = READ1;
