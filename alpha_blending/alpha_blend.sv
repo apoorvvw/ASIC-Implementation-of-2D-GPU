@@ -130,8 +130,7 @@ module alpha_blend
 		end
 		DONE: begin
 			alpha_done = 1;
-			if(alpha_en)
-				next_state = READ1;
+			next_state = IDLE;
 		end		
 		
 		endcase
