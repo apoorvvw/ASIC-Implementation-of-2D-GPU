@@ -27,13 +27,16 @@ module overall
 	input logic config_done,
 	output logic config_en,
 	
-	output logic out //this is the output from the alpha blending, goes to SDRAM
+	output logic out, //this is the output from the alpha blending, goes to SDRAM
+	output logic bla_done,
+	output logic fill_done,
+	output logic alpha_done
 );
 
 	reg [47:0] coordinates;
-	reg alpha_val[3:0];
-	reg texture_code[1:0];
-	reg color_code[23:0];
+	reg [3:0] alpha_val;
+	reg [1:0] texture_code;
+	reg [23:0] color_code;
 	reg layer_num;
 	reg vertice_num;
 	reg inst_type;
@@ -46,9 +49,8 @@ module overall
 	reg fill_en;
 
 	
-	reg bla_done;
-	reg fill_done;
-	reg alpha_done;
+	
+	
 	
 	logic [4095:0] line_buffer;
 	
@@ -75,7 +77,7 @@ module overall
 
 	);
 	*/	
-	decode DECODE
+	decode_block DECODE
 	(
 		.fifo_data(fifo_data), 
 		.coordinates(coordinates),
@@ -158,9 +160,7 @@ module overall
 		.fill_en(fill_en),
 		
 		.f_read_enable(f_read_enable),
-		.f_write_enable(f_write_enable),
 		.f_address(f_address),
-		.f_write_data(f_write_data),
 		
 		.a_read_enable(a_read_enable),
 		.f_write_enable(f_write_enable),
