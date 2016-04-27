@@ -134,7 +134,14 @@ module alpha_blend
 			begin
 				color1 = data1[(j * 8)+: 8];
 				color2 = data2[(j * 8)+: 8];
-				if(color1 == color2)
+				if(color1 == 8'hFF)
+				begin
+					write_data[(j * 8)+: 8] = color2;
+				end
+				else if(color2 = 8'hFF)
+					write_data[(j * 8)+: 8] = color1;
+				end
+				else if(color1 == color2)
 				begin
 					write_data[(j * 8)+: 8] = color1;
 				end
