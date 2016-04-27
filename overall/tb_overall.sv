@@ -54,7 +54,6 @@ module tb_overall();
     reg tb_bla_done;
     reg tb_fill_done;
     reg tb_alpha_done;
-    reg tb_out;
 
 	
 
@@ -117,7 +116,6 @@ module tb_overall();
 		.config_done(tb_config_done),
 		.config_en(tb_config_en),
 			
-		.out(tb_out),
 		.bla_done(tb_bla_done),
 		.fill_done(tb_fill_done),
 		.alpha_done(tb_alpha_done)
