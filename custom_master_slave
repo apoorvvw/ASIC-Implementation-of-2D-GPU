@@ -9,14 +9,18 @@ module custom_master_slave #(
 )	
 (	
 	input logic  clk,
-   input logic  reset_n,
+        input logic  reset_n,
 	
 	// Interface to Top Level
-	input logic rdwr_cntl,					// Control Read or Write to a slave module.
-	input logic n_action,					// Trigger the Read or Write. Additional control to avoid continuous transactions. Not a required signal. Can and should be removed for actual application.
-	input logic add_data_sel,				// Interfaced to switch. Selects either Data or Address to be displayed on the Seven Segment Displays.
-	input logic [MASTER_ADDRESSWIDTH-1:0] rdwr_address,	// read_address if required to be sent from another block. Can be unused if consecutive reads are required.
+	input logic rdwr_cntl,//SW[17]
+	input logic n_action,// Trigger the Read or Write. Additional control to avoid continuous transactions. Not a required signal. Can and should be removed for actual application.
+	input logic add_data_sel,//SW[16]
+	input logic [MASTER_ADDRESSWIDTH-1:0] rdwr_address,//SW[15:0]
 	output logic [DATAWIDTH-1:0] display_data,
+
+	//17 enable
+	//16 1=write 0=read
+	//15-0 unassigned
 
 	// Bus Slave Interface
         input logic [SLAVE_ADDRESSWIDTH-1:0] slave_address,
@@ -24,16 +28,16 @@ module custom_master_slave #(
         input logic  slave_write,
         input logic  slave_read,
         input logic  slave_chipselect,
-//      input logic  slave_readdatavalid, 			// These signals are for variable latency reads. 
-//	output logic slave_waitrequest,   			// See the Avalon Specifications for details  on how to use them.
+//      input logic  slave_readdatavalid,// These signals are for variable latency reads. 
+//	output logic slave_waitrequest,// See the Avalon Specifications for details  on how to use them.
         output logic [DATAWIDTH-1:0] slave_readdata,
-
 
 	// Bus Master Interface
         output logic [MASTER_ADDRESSWIDTH-1:0] master_address,
         output logic [DATAWIDTH-1:0] master_writedata,
         output logic  master_write,
         output logic  master_read,
+       
         input logic [DATAWIDTH-1:0] master_readdata,
         input logic  master_readdatavalid,
         input logic  master_waitrequest
@@ -53,37 +57,8 @@ logic [NUMREGS-1:0] reg_index, nextRegIndex;
 logic [NUMREGS-1:0][REGWIDTH-1:0] read_data_registers;  //Store SDRAM read data for display
 logic new_data_flag;
 
-typedef enum {IDLE, WRITE} state_t;
+typedef enum {IDLE, WRITE, WRITE_WAIT, READ_REQ, READ_WAIT, READ_ACK, READ_DATA, WAIT} state_t;
 state_t state, nextState;
-
-	 //wire br_clk,
-	 //wire br_n_rst,
-	 wire [7:0] br_x0,
-	 wire [7:0] br_y0,
-	 wire [7:0] br_x1,
-	 wire [7:0] br_y1,
-	 reg [4095:0] br_line_buffer,
-	 wire br_start,
-	 wire br_reset_buff,
-	 reg br_x,
-	 reg br_y,
-	 reg br_test,
-	 reg [63:0] [63:0] br_picture,
-	 reg br_done
-
-bresenham BREH (
-		.r_clk(clk),
-		.w_clk(clk),
-		.n_rst(reset_n),
-		.r_enable(br_r_enable),
-		.w_enable(br_w_enable),
-		.w_data(br_w_data),
-		.r_data(br_r_data),
-		.empty(br_empty),
-		.full(br_full)
-	);
-
-assign display_data = csr_registers[slave_address];
 
 // Slave side 
 always_ff @ ( posedge clk ) begin 
@@ -107,56 +82,185 @@ always_ff @ ( posedge clk ) begin
   	 end
 end
 
-// Master Side
+
+
+
+// Master Side 
+
 always_ff @ ( posedge clk ) begin 
 	if (!reset_n) begin 
-		address <= SDRAM_ADDR; //always start out at the base address of SDRAM, where pixel buffer is looking
-		state <= WRITE; 
+		address <= SDRAM_ADDR;
+		reg_index <= 0;
+		state <= IDLE;
+		wr_data <= 0 ;
+		read_data <= 32'hFEEDFEED; 
+		read_data_registers <= '0;
 	end else begin 
 		state <= nextState;
 		address <= nextAddress;
+		reg_index <= nextRegIndex;
+		wr_data <= nextData;
+		//read_data <= nextRead_data;
+		if(new_data_flag)
+			read_data_registers[reg_index] <= nextRead_data;
 	end
 end
 
-//Next State Logic 
+// Next State Logic 
+// If user wants to input data and addresses using a state machine instead of signals/conditions,
+// the following code has commented lines for how this could be done.
 always_comb begin 
 	nextState = state;
 	nextAddress = address;
-	master_write = 1'b0;
-	master_writedata = '0;
-	master_address = address;
+	nextRegIndex = reg_index;
+	//nextData = wr_data;
+	nextRead_data = master_readdata;
+	new_data_flag = 0;
 	case( state ) 
-		WRITE: begin
-			master_write = 1; //write enable must3 be set high to write to SDRAM
-			master_address =  address; //address in SDRAM to write to (initialized to SDRAM's base address and same place that pixel buffer is looking at)
-			
-			if(master_address > 32'h08015000)begin 
-				master_writedata = 32'h000000FF; //(Red = 32'h00FF0000, Green = 32'h0000FF00, Blue = 32'h000000FF)
-			end 
-			else 
-			begin
-				master_writedata = 32'h0000FF00; //(Blue = 32'h00FF0000, Green = 32'h0000FF00, Red = 32'h000000FF)
-			end
-			if (!master_waitrequest) begin //if not currently writing, go on to next address, otherwise wait for write to finish
-				nextAddress = address + 4; // address is in hex, and each is 32 bits wide, so move up by 4 hex
-				if(nextAddress == 32'h08CD2000) //if at the end of a 640x480 image space then go to idle (no need to write the entire SDRAM over)
-				begin
-					nextState = IDLE;
-				end
-				else //else keep on writing
-				begin
-					nextState = WRITE;
-				end			
+		IDLE : begin 
+			if ( rdwr_cntl && add_data_sel) begin 
+				nextState = WRITE;
+				//nextData = wr_data;
+			end else if ( rdwr_cntl && !add_data_sel) begin 
+				nextState = READ_REQ; 				
 			end
 		end 
-		
-		IDLE : 
-		begin
-			nextState = IDLE;
+		WRITE: begin
+			if (!master_waitrequest) begin
+				nextState = WAIT;
+				nextRegIndex = reg_index + 1;
+				nextAddress = (address == 32'h0812C000 ) ? SDRAM_ADDR : address + 4;				
+			end
+		end 
+		WAIT:
+			nextState = rdwr_address [4] ? WAIT : IDLE;
+		READ_REQ : begin 
+			if (!master_waitrequest) begin
+				nextState = READ_DATA;
+				nextAddress = address - 4 ;	
+				nextRegIndex = reg_index - 1;
+			end
 		end
-		
+		READ_DATA : begin
+			if ( master_readdatavalid) begin
+				nextRead_data = master_readdata;
+				nextState = IDLE;
+				new_data_flag =1;
+			end
+		end
+	endcase
+end
+
+// Output Logic 
+always_comb begin 
+	master_write = 1'b0;
+	master_read = 1'b0;
+	master_writedata = 32'h0;
+	master_address = 32'hbad1bad1;
+
+	case(state) 
+		WRITE : begin 
+			master_write = 1;
+			master_address =  address;
+			master_writedata = //address;
+				{8'h00,
+				rdwr_address[2],rdwr_address[2],rdwr_address[2],rdwr_address[2],
+				rdwr_address[2],rdwr_address[2],rdwr_address[2],rdwr_address[2],
+				
+				rdwr_address[1],rdwr_address[1],rdwr_address[1],rdwr_address[1],
+				rdwr_address[1],rdwr_address[1],rdwr_address[1],rdwr_address[1],
+				
+				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0],
+				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0]};
+		end 
+		READ_REQ : begin 
+			master_address = address;
+			master_read = 1;	
+		end
 	endcase
 end
 
 endmodule
 
+/*
+logic vertice_num;
+logic coordinates;
+logic inst_type;
+logic alpha_done;
+logic fifo_empty;
+logic config_in;
+logic config_done;
+logic fill_type;
+logic texture_code;
+logic color_code;
+logic layer_num;
+
+	assign vertice_num = 1'b1;
+	assign coordinates = {8'd60, 8'd32, 8'd2, 8'd62, 8'd2, 8'd2};
+	assign inst_type = 1'b0;
+	assign alpha_done= 1'b0;
+	/*assign fifo_empty;
+	assign config_in;
+	assign config_done;
+	assign fill_type;
+	assign texture_code;
+	assign color_code;
+	assign layer_num;
+*/
+/*
+logic [7:0] x0 = 8'd0;
+logic [7:0] y0 = 8'd0;
+logic [7:0] x1 = 8'd10;
+logic [7:0] y1 = 8'd10;
+logic start;
+logic reset_buff;
+	
+	bresenham BR 
+	(
+		.clk(clk),
+		.n_rst(reset_n),
+		.x0(x0),
+		.y0(y0),
+		.x1(x1),
+		.y1(y1),
+		.start(start),
+		.x(x),
+		.y(y),
+		.reset_buff(reset_buff),
+		.line_buffer(line_buffer),
+		.picture(picture),
+		.done(done)
+	);
+
+assign start = !done;
+assign reset_buff = 0;
+*/
+/*
+	fill_bla_wrapper FBW
+	(
+		.clk(clk),
+		.n_rst(reset_n),
+	
+		.vertice_num(vertice_num),
+		.coordinates(coordinates),
+		.inst_type(inst_type),
+		.alpha_done(alpha_done),
+		.fifo_empty(fifo_empty),
+		.config_in(config_in),
+		.config_done(config_done),
+		.fill_type(fill_type),
+		.texture_code(texture_code),
+		.color_code(color_code),
+		.layer_num(layer_num),
+		
+		.read_enable(read_enable),
+		.write_enable(write_enable),
+		.address(address),
+		.read_data(read_data),
+		.write_data(write_data),
+		.fill_done(fill_done),
+		.bla_done(bla_done),
+		.line_buffer(line_buffer)
+
+	);
+*/
