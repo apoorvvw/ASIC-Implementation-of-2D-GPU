@@ -57,7 +57,9 @@ module overall
 	logic [23:0] f_address;
 	logic [1535:0] f_write_data;
 	logic a_read_enable;
+	logic a_write_enable;
 	logic [23:0] a_address;
+	logic [1535:0] a_write_data;
 
 	/*
 	shubham FFIFFO
@@ -143,9 +145,10 @@ module overall
 	   	.alpha_done(alpha_done),
 	   	
 	   	.read_enable(a_read_enable),
+	   	.write_enable(a_write_enable),
 	   	.address(a_address),
 		.read_data(read_data),
-		.write_data(out)
+		.write_data(a_write_data)
 	
 	); 
 	
@@ -153,12 +156,17 @@ module overall
 	(	
 		.alpha_en(alpha_en),
 		.fill_en(fill_en),
+		
 		.f_read_enable(f_read_enable),
 		.f_write_enable(f_write_enable),
 		.f_address(f_address),
 		.f_write_data(f_write_data),
+		
 		.a_read_enable(a_read_enable),
+		.f_write_enable(f_write_enable),
 		.a_address(a_address),
+		.f_write_data(f_write_data),
+		
 		.read_enable(read_enable),
 		.write_enable(write_enable),
 		.address(address),
