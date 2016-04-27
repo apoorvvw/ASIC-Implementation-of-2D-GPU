@@ -6,25 +6,25 @@
 // Version:     1.0  Initial Design Entry
 // Description: Multiplexer for several signals go to SRAM
 
-module mutliplexer.sv
+module multiplexer
 (
-	input wire alpha_en,
-	input wire fill_en,
+	input logic alpha_en,
+	input logic fill_en,
 	
-	input wire f_read_enable,
-	input wire f_write_enable,
-	input wire [23:0] f_address,
-	input wire [1535:0]f_write_data,
+	input logic f_read_enable,
+	input logic f_write_enable,
+	input logic [23:0] f_address,
+	input logic [1535:0]f_write_data,
 	
-	input wire a_read_enable,
-	input wire a_write_enable,
-	input wire [23:0] a_address,
-	input wire [1535:0]a_write_data,
+	input logic a_read_enable,
+	input logic a_write_enable,
+	input logic [23:0] a_address,
+	input logic [1535:0]a_write_data,
 		
-	output wire read_enable,
-	output wire [23:0]address,
-	output wire [1535:0]write_data,
-	output wire write_enable
+	output logic read_enable,
+	output logic [23:0]address,
+	output logic [1535:0]write_data,
+	output logic write_enable
 
 );
 	always_comb
@@ -32,7 +32,7 @@ module mutliplexer.sv
 		read_enable = 0;
 		write_enable = 0;
 		address = '0;
-		wrire_data = '0;
+		write_data = '0;
 		if(alpha_en) begin
 			read_enable = a_read_enable;
 			write_enable = a_write_enable;
