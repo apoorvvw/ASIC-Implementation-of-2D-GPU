@@ -115,7 +115,7 @@ module tb_overall();
 		.config_in(tb_config_in),
 		.config_done(tb_config_done),
 		.config_en(tb_config_en),
-			
+		
 		.bla_done(tb_bla_done),
 		.fill_done(tb_fill_done),
 		.alpha_done(tb_alpha_done)
