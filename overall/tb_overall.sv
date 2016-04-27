@@ -51,7 +51,26 @@ module tb_overall();
     reg tb_config_in;
     reg tb_config_done;
     reg tb_config_en;
-    
+    reg tb_bla_done;
+    reg tb_fill_done;
+    reg tb_alpha_done;
+    reg tb_out;
+
+	
+
+	reg [7:0] x0;
+	reg [7:0] y0;
+	reg [7:0] x1;
+	reg [7:0] y1;
+	reg [7:0] x2;
+	reg [7:0] y2;
+	reg [3:0] alpha_val;
+	reg [1:0] texture_code;
+	reg [23:0] color_code;
+	reg layer_num;
+	reg vertice_num;
+	reg inst_type;
+	reg fill_type;
 	always
     begin : CLK_GEN
 		tb_clk = 1'b0;
@@ -96,8 +115,12 @@ module tb_overall();
 		
 		.config_in(tb_config_in),
 		.config_done(tb_config_done),
-		.config_en(tb_config_en)
-
+		.config_en(tb_config_en),
+			
+		.out(tb_out),
+		.bla_done(tb_bla_done),
+		.fill_done(tb_fill_done),
+		.alpha_done(tb_alpha_done)
 	);
 
 	initial
@@ -107,7 +130,20 @@ module tb_overall();
 		tb_n_rst = 1'b1;
     	#TB_CLK_PERIOD;
 		//Initial signals here 
-		
+		x0 = 8'd10;
+		y0 = 8'd10;
+		x1 = 8'd10;
+		y1 = 8'd60;
+		x2 = 8'd50;
+		y2 = 8'd10;
+		alpha_val = '0;
+		texture_code = '0;
+		color_code = 24'hFFEEDD;
+		layer_num = 1'b0;
+		vertice_num = 1'b1;
+		inst_type = 1'b0;
+		fill_type = 1'b0;
+		tb_fifo_data = {alpha_val, texture_code, color_code, fill_type, layer_num, y2, x2, y1, x1, y0, x0, vertice_num, inst_type};
 		// Initialize all test bench control signals and DUT inputs
 		tb_mem_clr					<= 0;//default, do not change its value
 		tb_mem_init					<= 0;//default, do not change its value
@@ -120,7 +156,73 @@ module tb_overall();
 		#(TB_CLK_PERIOD * 10);
 	
 		//testcases here
+		tb_config_in = 1'b1;
+		#TB_CLK_PERIOD;
+		tb_config_in = 1'b0;
+		tb_config_done = 1'b1;
+		#TB_CLK_PERIOD;
+		tb_config_done = 1'b0;
+		#TB_CLK_PERIOD;
+		while(1 == 1)
+		begin
+			if(tb_fill_done == 1'b1)
+				break;
+		end
+		#TB_CLK_PERIOD;
+		tb_fifo_empty = 1'b0;
+		x0 = 8'd15;
+		y0 = 8'd5;
+		x1 = 8'd10;
+		y1 = 8'd50;
+		x2 = 8'd10;
+		y2 = 8'd10;
+		alpha_val = '0;
+		texture_code = '0;
+		color_code = 24'hFFEEDD;
+		layer_num = 1'b1;
+		vertice_num = 1'b1;
+		inst_type = 1'b0;
+		fill_type = 1'b0;
+		tb_fifo_data = {alpha_val, texture_code, color_code, fill_type, layer_num, y2, x2, y1, x1, y0, x0, vertice_num, inst_type};
+		#TB_CLK_PERIOD;
+		tb_fifo_empty = 1'b1;
+		while(1 == 1)
+		begin
+			if(tb_fill_done == 1'b1)
+				break;
+		end
+		#TB_CLK_PERIOD;	
+		tb_fifo_empty = 1'b0;
+		x0 = '0;
+		y0 = '0;
+		x1 = '0;
+		y1 = '0;
+		x2 = '0;
+		y2 = '0;
+		alpha_val = 4'd7;
+		texture_code = '0;
+		color_code = 24'hFFEEDD;
+		layer_num = 1'b1;
+		vertice_num = 1'b1;
+		inst_type = 1'b1;
+		fill_type = 1'b0;
+		tb_fifo_data = {alpha_val, texture_code, color_code, fill_type, layer_num, y2, x2, y1, x1, y0, x0, vertice_num, inst_type};
+		while(1 == 1)	
+		begin
+			if(tb_alpha_done)
+				break;
+		end
+		#TB_CLK_PERIOD;	
+		tb_fifo_empty = 1'b1;
+		// Test Memory Dump feature
+		$info("Testing Memory Dump Feature");
+		tb_mem_dump					<= 1;
+		tb_dump_file_number	<=	0;
+		tb_start_address		<= 0;
+		tb_last_address			<= TB_MAX_ADDRESS;
+		#TB_CLK_PERIOD;
 		
+		tb_mem_dump	<= 0;
 	end
 	
 	
