@@ -27,7 +27,7 @@ begin
 		begin
 			coordinates = {fifo_data[17:2], fifo_data[33:18], '0};
 		end
-		else if(fifo_data[3:1] == 1'd1) //vertice number is 3
+		else if(fifo_data[1] == 1'd1) //vertice number is 3
 		begin
 			coordinates = fifo_data[17:2], fifo_data[33:18], fifp_data[49:34]};
 		end
