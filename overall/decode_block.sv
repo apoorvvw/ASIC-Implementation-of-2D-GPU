@@ -25,11 +25,11 @@ begin
 		vertice_num = fifo_data[1];
 		if(fifo_data[1] == 1'd0) //vertice number is 2
 		begin
-			coordinates = {fifo_data[17:2], fifo_data[33:18], '0};
+			coordinates = {'0, fifo_data[33:18] ,fifo_data[17:2]};
 		end
 		else if(fifo_data[1] == 1'd1) //vertice number is 3
 		begin
-			coordinates = {fifo_data[17:2], fifo_data[33:18], fifo_data[49:34]};
+			coordinates = {fifo_data[49:34], fifo_data[33:18], fifo_data[17:2]};
 		end
 		layer_num = fifo_data[50];
 		if(fifo_data[51] == 1'd0) //fill type is solid color
