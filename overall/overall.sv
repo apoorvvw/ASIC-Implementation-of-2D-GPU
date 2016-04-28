@@ -127,6 +127,7 @@ module overall
 		.fill_type(fill_type), //come from DECODE
 		.coordinates(coordinates), //come from DECODE
 		.texture_code(texture_code), //come from DECODE
+		.vertice_num(vertice_num),
 		.color_code(color_code), //come from DECODE
 		.layer_num(layer_num), //come from DECODE
 		.line_buffer(line_buffer), //come from BLA
