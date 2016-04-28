@@ -6,6 +6,17 @@
 // Version:     1.0  Initial Design Entry
 // Description: new fill block
 
+/*
+SRAM ADDRESS
+layerbuffer1 	0~65535
+layerbuffer2 	65536~131071
+texture1    	131072~135167
+texture2		135168~139263
+texture3		139264~143359
+
+outputbuffer    143360~208895
+*/
+
 module fill
 #(
 	ADDR_SIZE_BITS = 24,
@@ -22,6 +33,7 @@ module fill
 	
 	input logic [47:0] coordinates,
 	input logic [1:0] texture_code,
+	input logic vertice_num,
 	input logic [23:0] color_code,
 	input logic layer_num,
 	input logic [4095:0] line_buffer,
@@ -108,19 +120,32 @@ module fill
 		end
 		MATH: begin
 			nexti = 0;
-		    nextxmin = coordinates[7:0];
-            if (coordinates[23:16] < nextxmin)
-                nextxmin = coordinates[23:16];
-            if (coordinates[39:32] < nextxmin)
-                nextxmin = coordinates[39:32];
+			if(vertice_num)
+			begin
+				nextxmin = coordinates[7:0];
+		        if (coordinates[23:16] < nextxmin)
+		            nextxmin = coordinates[23:16];
+		        if (coordinates[39:32] < nextxmin)
+		            nextxmin = coordinates[39:32];
 
-           
-            nextymin = coordinates[15:8];
-            if (coordinates[31:24] < nextymin)
-                nextymin = coordinates[31:24];
-            if (coordinates[47:40] < nextymin)
-                nextymin = coordinates[47:40];
-    		next_state = READ;
+		       
+		        nextymin = coordinates[15:8];
+		        if (coordinates[31:24] < nextymin)
+		            nextymin = coordinates[31:24];
+		        if (coordinates[47:40] < nextymin)
+		            nextymin = coordinates[47:40];
+			end
+    		else
+			begin
+				nextxmin = coordinates[7:0];
+				if(coordinates[23:16] < nextxmin)
+					nextxmin = coordinates[23:16];
+					
+				nextymin = coordinates[15:8];
+            	if (coordinates[31:24] < nextymin)
+                	nextymin = coordinates[31:24];
+			end
+			next_state = READ;
     	end
     	
     	READ: begin
