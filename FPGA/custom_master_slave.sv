@@ -162,7 +162,7 @@ always_comb begin
 	master_read = 1'b0;
 	master_writedata = 32'h0;
 	master_address = 32'hbad1bad1;
-	master_redgradient = 8'b00000000;
+	//master_redgradient = 8'b00000000;
 	next_master_redgradient = master_redgradient;
 
 	case(state) 
