@@ -92,10 +92,6 @@ module bresenham
 		nextETwo = currentETwo;
 		nextX = currentX;
 		nextY = currentY;
-		currentX = x0_mod;
-		currentY = y0_mod;
-		currentErr = deltaX - deltaY;
-		currentETwo = 2 * currentErr;
 		
 		case(current_state)
 		
@@ -179,7 +175,12 @@ module bresenham
 			DONE: begin
 				next_state = IDLE;
 				done = 1'b1;
-			end	
+			end
+			default: 
+				currentX = x0_mod;
+				currentY = y0_mod;
+				currentErr = deltaX - deltaY;
+				currentETwo = 2 * currentErr;
 		endcase
 		//OUTPUT LOGIC
 		// set pixel
