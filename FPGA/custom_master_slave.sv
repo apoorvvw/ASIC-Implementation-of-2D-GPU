@@ -58,7 +58,8 @@ logic [NUMREGS-1:0][REGWIDTH-1:0] csr_registers;  		// Command and Status Regist
 logic [NUMREGS-1:0] reg_index, nextRegIndex;
 logic [NUMREGS-1:0][REGWIDTH-1:0] read_data_registers;  //Store SDRAM read data for display
 logic new_data_flag;
-logic [7:0] next_master_redgradient, master_redgradient;
+logic [7:0] next_master_redgradient;
+logic [7:0] master_redgradient;
 
 typedef enum {IDLE, WRITE, WRITE_WAIT, READ_REQ, READ_WAIT, READ_ACK, READ_DATA, WAIT} state_t;
 state_t state, nextState;
@@ -162,7 +163,6 @@ always_comb begin
 	master_read = 1'b0;
 	master_writedata = 32'h0;
 	master_address = 32'hbad1bad1;
-	//master_redgradient = 8'b00000000;
 	next_master_redgradient = master_redgradient;
 
 	case(state) 
@@ -178,7 +178,7 @@ always_comb begin
 				
 				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0],
 				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0]};
-				next_master_redgradient = (master_redgradient + 1'b1) % 256; 
+				 next_master_redgradient = (master_redgradient + 1'b1) % 256; 
 		end 
 		READ_REQ : begin 
 			master_address = address;
@@ -189,85 +189,4 @@ end
 
 endmodule
 
-/*
-logic vertice_num;
-logic coordinates;
-logic inst_type;
-logic alpha_done;
-logic fifo_empty;
-logic config_in;
-logic config_done;
-logic fill_type;
-logic texture_code;
-logic color_code;
-logic layer_num;
 
-	assign vertice_num = 1'b1;
-	assign coordinates = {8'd60, 8'd32, 8'd2, 8'd62, 8'd2, 8'd2};
-	assign inst_type = 1'b0;
-	assign alpha_done= 1'b0;
-	/*assign fifo_empty;
-	assign config_in;
-	assign config_done;
-	assign fill_type;
-	assign texture_code;
-	assign color_code;
-	assign layer_num;
-*/
-/*
-logic [7:0] x0 = 8'd0;
-logic [7:0] y0 = 8'd0;
-logic [7:0] x1 = 8'd10;
-logic [7:0] y1 = 8'd10;
-logic start;
-logic reset_buff;
-	
-	bresenham BR 
-	(
-		.clk(clk),
-		.n_rst(reset_n),
-		.x0(x0),
-		.y0(y0),
-		.x1(x1),
-		.y1(y1),
-		.start(start),
-		.x(x),
-		.y(y),
-		.reset_buff(reset_buff),
-		.line_buffer(line_buffer),
-		.picture(picture),
-		.done(done)
-	);
-
-assign start = !done;
-assign reset_buff = 0;
-*/
-/*
-	fill_bla_wrapper FBW
-	(
-		.clk(clk),
-		.n_rst(reset_n),
-	
-		.vertice_num(vertice_num),
-		.coordinates(coordinates),
-		.inst_type(inst_type),
-		.alpha_done(alpha_done),
-		.fifo_empty(fifo_empty),
-		.config_in(config_in),
-		.config_done(config_done),
-		.fill_type(fill_type),
-		.texture_code(texture_code),
-		.color_code(color_code),
-		.layer_num(layer_num),
-		
-		.read_enable(read_enable),
-		.write_enable(write_enable),
-		.address(address),
-		.read_data(read_data),
-		.write_data(write_data),
-		.fill_done(fill_done),
-		.bla_done(bla_done),
-		.line_buffer(line_buffer)
-
-	);
-*/
