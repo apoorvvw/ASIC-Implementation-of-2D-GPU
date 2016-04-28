@@ -31,13 +31,17 @@ module bresenham_controller
 	always_ff @ (posedge clk, negedge n_rst)
 	begin
 		if(n_rst == 0)
+		begin
 			state <= IDLE; 
 			min_x <= '0;
 			min_y <= '0;
+		end
 		else
+		begin
 			state <= next_state;
 			min_x <= next_min_x;
 			min_y <= next_min_y;
+		end
 	end
 
 	always_comb
