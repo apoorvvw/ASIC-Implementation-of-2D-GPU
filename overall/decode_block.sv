@@ -30,7 +30,7 @@ begin
 		vertice_num = fifo_data[1];
 		if(fifo_data[1] == 1'd0) //vertice number is 2
 		begin
-			coordinates = {'0, fifo_data[33:18] ,fifo_data[17:2]};
+			coordinates = {8'b0, fifo_data[33:18] ,fifo_data[17:2]};
 		end
 		else if(fifo_data[1] == 1'd1) //vertice number is 3
 		begin
