@@ -7,7 +7,8 @@
 // Description: Bresenham
 
 
-module bresenham(
+module bresenham
+(
 	input wire clk,
 	input wire n_rst,
 	input wire [7:0] x0,
@@ -31,7 +32,9 @@ module bresenham(
 	logic signed [1:0] sx; 
 	logic signed [1:0] sy;
 
-	
+	logic [4095:0] next_line_buffer;
+	logic [63:0] [63:0] next_picture;
+
 	logic signed [8:0] nextErr; // signed or unsigned? 
 	logic signed [8:0] currentErr;
 
@@ -74,6 +77,8 @@ module bresenham(
 			currentETwo <= 2 * currentErr; 
 			currentX <= x0_mod; 
 			currentY <= y0_mod;	
+			line_buffer <= '0;
+			picture <= '0;
 		end
 		else begin
 			currentErr <= nextErr; 
@@ -81,7 +86,9 @@ module bresenham(
 	 		currentX <= nextX; 
 	 		currentY <= nextY;
 	 		current_state <= next_state;
-	 	end
+			line_buffer <= next_line_buffer;
+			picture <= next_picture;	 	
+		end
 	end
 
     always_comb begin:	NEXT_STATE_LOGIC
@@ -91,6 +98,9 @@ module bresenham(
 		nextETwo = currentETwo;
 		nextX = currentX;
 		nextY = currentY;
+		next_line_buffer = line_buffer;
+		next_picture = picture;
+		done = 1'b0;
 		case(current_state)
 		
 			IDLE: begin
@@ -121,8 +131,8 @@ module bresenham(
 			end			
 			
 			PROCESS: begin
-				picture[currentY][currentX] = 1'b1;
-				line_buffer [currentY * 64 + currentX] = 1'b1;
+				next_picture[currentY][currentX] = 1'b1;
+				next_line_buffer [currentY * 64 + currentX] = 1'b1;
 				if (currentX == x1_mod && currentY == y1_mod)
 				begin
 					next_state = DONE;   
@@ -159,8 +169,8 @@ module bresenham(
 			
 			RESET:
 			begin
-				picture = 4096'd0;
-				line_buffer = 4096'd0;
+				next_picture = 4096'd0;
+				next_line_buffer = 4096'd0;
 				if (start) begin
 					next_state = IDLE;
 					nextETwo = 2 * currentErr;					
@@ -173,7 +183,7 @@ module bresenham(
 			DONE: begin
 				next_state = IDLE;
 				done = 1'b1;
-			end	
+			end
 		endcase
 		//OUTPUT LOGIC
 		// set pixel
@@ -188,3 +198,4 @@ module bresenham(
 
 	end
 endmodule // bresenham
+
