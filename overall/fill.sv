@@ -46,7 +46,7 @@ module fill
 
 );
 
-    reg [31:0] i,nexti,j,k,next_k,h;
+    reg [31:0] i,nexti,j,next_j, k,next_k,h, next_h;
     reg found_flag;
     reg [5:0]adr1,adr2,next_adr1,next_adr2;
     reg [7:0]xmin,nextxmin;
@@ -54,10 +54,10 @@ module fill
     reg [23:0]currentaddress, nextaddress;
     logic [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] next_write_data;
     reg [63:0] lineline;
-    typedef enum logic [3:0] {IDLE, MATH, READ, WAIT1, FIND1,INITIAL,FIND2,FILL, WAIT2, UPDATE, DONE} 
+    typedef enum logic [3:0] {IDLE, MATH, READ, WAIT1, FIND1,FIND2,FILL_ONE, FILL_MUL, WAIT2, WAIT3, WAIT4, WAIT5 , READ_TEXTURE, UPDATE, DONE} 
 	state_type;
 	state_type state, next_state;
-   
+    reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0]layer, next_layer, texture, next_texture;
        
     always_ff @ (posedge clk,negedge n_rst)
 	begin
@@ -66,11 +66,15 @@ module fill
             ymin <= '0;
             i <= '0;
             k <= '0;
+            j <= '0;
+            h <= '0;
             currentaddress <= 24'h000000;
 	    	state <= IDLE;
 	    	write_data <= '0;
 	    	adr1 <= 0;
 	    	adr2 <= 0;
+	    	layer <= '0;
+	    	texture <= '0;
         end 
         else 
         begin
@@ -78,10 +82,14 @@ module fill
        	    ymin <= nextymin;
        	    i <= nexti;
        	    k <= next_k;
+       	    j <= next_j;
+       	    h <= next_h;
        	    state <= next_state;
        	    write_data <= next_write_data;
        	    adr1 <= next_adr1;
        	    adr2 <= next_adr2;
+       	    layer <= next_layer;
+       	    texture <= next_texture;
 	  		if( nexti == 0)
 	  		begin
 				if(layer_num == 0)
@@ -102,6 +110,7 @@ module fill
     	next_state = state;
     	nexti = i;
     	next_k = k;
+    	next_j = j;
     	nextxmin = xmin;
         nextymin = ymin;
         address = '0;
@@ -112,6 +121,8 @@ module fill
         found_flag = 0;
         next_adr1 = adr1;
         next_adr2 = adr2;
+        next_layer = layer;
+        next_texture = texture;
         fill_done = 0;
     	case(state)
     	IDLE: begin
@@ -154,70 +165,114 @@ module fill
 			end else begin
 				address = currentaddress;
 				read_enable = 1'b1;
-				next_state = WAIT1;
+				next_state = WAIT3;
 			end
     	end
-    	
-    	WAIT1: begin
+    	WAIT3: begin
     		address = currentaddress;
 			read_enable = 1'b1;
-			next_state = FIND1;
+
+    		next_state = WAIT1;
+    	
+    	end
+    	WAIT1: begin
+    		next_layer = read_data;
+    		next_write_data  = read_data;
+    		next_j = 0;
+			if(~fill_type)
+				
+				next_state = FIND1;
+				
+			else
+				next_state = READ_TEXTURE;
 		end
+		READ_TEXTURE: begin
+		 		address = 135168 + i * 64;
+
+		 	read_enable = 1;
+		 	next_state = WAIT4;
+		 end
+		 
+		 WAIT4: begin
+			address = 135168 + i *64;
+		 	read_enable = 1;
+		 	next_state = WAIT5;
+		 end
+		 
+		 WAIT5: begin
+		 	next_texture = read_data;
+		 	next_state = FIND1;
+		 
+		 
+		 end
+		 		
 		FIND1: begin
-			next_write_data  = read_data;
-			for (j = 0; j < 64; j++)
+            if(lineline[j] == 1'b1)
             begin
-                if(lineline[j] == 1'b1)
-                begin
-                    next_adr1 = j;
-                    found_flag = 1;
-                    break;
-                end             
+                next_adr1 = j;
+                next_state = FIND2;
+                next_k = 63;
+           
+            end else begin
+            	next_j = j + 1;
+            	next_state = FIND1;
+            	if(j == 63)
+            		next_state = WAIT2;
             end
-            if(found_flag)
-            	next_state = INITIAL;
-            else
-            	next_state = WAIT2;
         end
         
-        INITIAL: begin
-			next_k = 63;
-			next_state = FIND2;
-		end
+
 		FIND2: begin
 		    if(lineline[k] == 1'b1)
 		    begin
 		        next_adr2 = k;
-		        next_state = FILL; 
+		        next_state = FILL_ONE; 
 		    end else begin   
 				next_k = k - 1;
 		    	next_state = FIND2;
 		    	if (k == 0)
-		    		next_state = FILL;
+		    		next_state = FILL_ONE;
 		    end
 		end
 		
+		FILL_ONE: begin
+			if(adr1 == adr2)
+			begin
+				if(fill_type)
+		       		next_write_data[(adr1 * 24)+:24] = texture[(adr1 * 24)+:24];
+		       	else
+		       		next_write_data[(adr1 * 24)+:24] = color_code;
+		       	next_state = WAIT2;
+		    end
+		    else
+		   	begin
+		   		next_h = 0;
+		   		next_state = FILL_MUL;
+			end
+		
+		end
 
         
-        FILL: begin
-        	if(adr1 == adr2)
-        		next_write_data[adr1 * 24+:24] = color_code;
-        	else
-      		begin//fill anything in between
-		    for(h = 0; h < 64; h++)
-		        begin
-		       		if(h >= adr1)
-		       		begin
-		       			if(h > adr2) begin
-		       				break;
-		       			end else begin
-		       				next_write_data[(h * 24)+:24] = color_code;  
-		       			end    
-		       		end
-		       			
-		        end
+        FILL_MUL: begin
+		    if(h >= adr1)
+		    begin
+		        if(h > adr2) begin
+		       		next_state = WAIT2;	
+		       	end else begin
+		       		if(fill_type)
+		       			next_write_data[(h * 24)+:24] = texture[(h * 24)+:24];
+		       		else
+		       			next_write_data[(h * 24)+:24] = color_code;  
+		       		next_state = FILL_MUL;
+		       		next_h = h + 1;	
+		       	end    
 		   	end
-        	next_state = WAIT2;
+		   	else
+		   	begin
+		   		next_h = h + 1;
+		   		next_state = FILL_MUL;
+		   	
+		   	end
         end
         
 		WAIT2: begin
