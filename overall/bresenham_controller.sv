@@ -35,9 +35,7 @@ module bresenham_controller
 			state <= IDLE; 
 			min_x <= '0;
 			min_y <= '0;
-		end
-		else
-		begin
+		end else begin
 			state <= next_state;
 			min_x <= next_min_x;
 			min_y <= next_min_y;
@@ -74,7 +72,7 @@ module bresenham_controller
 		begin
 			if(vertice_num == 1'b1)
 			begin
-				next_min_x = coordinates[7:0];
+						next_min_x = coordinates[7:0];
             			if (coordinates[23:16] < next_min_x)
                 			next_min_x = coordinates[23:16];
             			if (coordinates[39:32] < next_min_x)
@@ -83,18 +81,18 @@ module bresenham_controller
            
             			next_min_y = coordinates[15:8];
             			if (coordinates[31:24] < next_min_y)
-                			next_min_x = coordinates[31:24];
+                			next_min_y = coordinates[31:24];
             			if (coordinates[47:40] < next_min_y)
-                			next_min_x = coordinates[39:32];
+                			next_min_y = coordinates[47:40];
 			end
 			else
 			begin
-				next_min_x = coordinates[7:0];
-				if(coordinates[23:16] < next_min_x)
-					next_min_x = coordinates[23:16];
-				next_min_y = coordinates[15:8];
+						next_min_x = coordinates[7:0];
+						if(coordinates[23:16] < next_min_x)
+							next_min_x = coordinates[23:16];
+						next_min_y = coordinates[15:8];
             			if (coordinates[31:24] < next_min_y)
-                			next_min_x = coordinates[31:24];
+                			next_min_y = coordinates[31:24];
 			end
 			next_state = RESET;
 		end
