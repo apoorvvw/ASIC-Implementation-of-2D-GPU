@@ -31,7 +31,6 @@ module bresenham
 	logic signed [8:0]  deltaX; 
 	logic signed [1:0] sx; 
 	logic signed [1:0] sy;
-
 	
 	logic signed [8:0] nextErr; // signed or unsigned? 
 	logic signed [8:0] currentErr;
@@ -92,9 +91,6 @@ module bresenham
 		nextETwo = currentETwo;
 		nextX = currentX;
 		nextY = currentY;
-		line_buffer = '0;
-		picture ='0;
-		done = 1'b0;
 		case(current_state)
 		
 			IDLE: begin
@@ -178,12 +174,7 @@ module bresenham
 				next_state = IDLE;
 				done = 1'b1;
 			end
-			default:
-			begin
-				line_buffer = '0;
-				picture ='0;
-				done = 1'b0;
-			end
+
 		endcase
 		//OUTPUT LOGIC
 		// set pixel
