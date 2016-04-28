@@ -187,14 +187,25 @@ module fill
 				next_state = READ_TEXTURE;
 		end
 		READ_TEXTURE: begin
-		 		address = 135168 + i * 64;
+			if(texture_code == 0)
+				address = 131072 + i * 64;
+			else if(texture_code == 1)
+				address = 135168 + i * 64;
+			else
+				address = 139264 + i * 64;
 
 		 	read_enable = 1;
 		 	next_state = WAIT4;
 		 end
 		 
 		 WAIT4: begin
-			address = 135168 + i *64;
+			if(texture_code == 0)
+				address = 131072 + i * 64;
+			else if(texture_code == 1)
+				address = 135168 + i * 64;
+			else
+				address = 139264 + i * 64;
+				
 		 	read_enable = 1;
 		 	next_state = WAIT5;
 		 end
