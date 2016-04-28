@@ -24,14 +24,20 @@ module bresenham_controller
 );
 	typedef enum logic [3:0] {IDLE, MIN_CALC, DRAW2, DRAW3_1, DRAW3_2, DRAW3_3, DONE, WAIT2, WAIT3_1, WAIT3_2, DONE_WAIT, RESET} state_type;
 	state_type state, next_state;
-	reg [7:0]min_x;
-	reg [7:0]min_y;
+	reg [7:0] min_x;
+	reg [7:0] min_y;
+	reg [7:0] next_min_x;
+	reg [7:0] next_min_y;
 	always_ff @ (posedge clk, negedge n_rst)
 	begin
 		if(n_rst == 0)
-			state <= IDLE;     
+			state <= IDLE; 
+			min_x <= '0;
+			min_y <= '0;
 		else
-			state <= next_state;	    
+			state <= next_state;
+			min_x <= next_min_x;
+			min_y <= next_min_y;
 	end
 
 	always_comb
@@ -44,8 +50,8 @@ module bresenham_controller
 		x1 = '0;
 		y1 = '0;
 		next_state = state;
-		min_x = '0;
-		min_y = '0;
+		next_min_x = min_x;
+		next_min_y = min_y;
 		case (state)
 		IDLE: begin
 			draw_en = 1'b0;
@@ -64,27 +70,27 @@ module bresenham_controller
 		begin
 			if(vertice_num == 1'b1)
 			begin
-				min_x = coordinates[7:0];
+				next_min_x = coordinates[7:0];
             			if (coordinates[23:16] < min_x)
-                			min_x = coordinates[23:16];
+                			next_min_x = coordinates[23:16];
             			if (coordinates[39:32] < min_x)
-                			min_x = coordinates[39:32];
+                			next_min_x = coordinates[39:32];
 
            
-            			min_y = coordinates[15:8];
+            			next_min_y = coordinates[15:8];
             			if (coordinates[31:24] < min_y)
-                			min_x = coordinates[31:24];
+                			next_min_x = coordinates[31:24];
             			if (coordinates[47:40] < min_y)
-                			min_x = coordinates[39:32];
+                			next_min_x = coordinates[39:32];
 			end
 			else
 			begin
-				min_x = coordinates[7:0];
+				next_min_x = coordinates[7:0];
 				if(coordinates[23:16] < min_x)
-					min_x = coordinates[23:16];
-				min_y = coordinates[15:8];
+					next_min_x = coordinates[23:16];
+				next_min_y = coordinates[15:8];
             			if (coordinates[31:24] < min_y)
-                			min_x = coordinates[31:24];
+                			next_min_x = coordinates[31:24];
 			end
 			next_state = RESET;
 		end
