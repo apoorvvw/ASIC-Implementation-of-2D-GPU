@@ -37,10 +37,12 @@ module custom_master_slave #(
         output logic [DATAWIDTH-1:0] master_writedata,
         output logic  master_write,
         output logic  master_read,
+
        
         input logic [DATAWIDTH-1:0] master_readdata,
         input logic  master_readdatavalid,
         input logic  master_waitrequest
+	
 		  
 );
 
@@ -56,6 +58,7 @@ logic [NUMREGS-1:0][REGWIDTH-1:0] csr_registers;  		// Command and Status Regist
 logic [NUMREGS-1:0] reg_index, nextRegIndex;
 logic [NUMREGS-1:0][REGWIDTH-1:0] read_data_registers;  //Store SDRAM read data for display
 logic new_data_flag;
+logic [7:0] next_master_redgradient, master_redgradient;
 
 typedef enum {IDLE, WRITE, WRITE_WAIT, READ_REQ, READ_WAIT, READ_ACK, READ_DATA, WAIT} state_t;
 state_t state, nextState;
@@ -95,11 +98,13 @@ always_ff @ ( posedge clk ) begin
 		wr_data <= 0 ;
 		read_data <= 32'hFEEDFEED; 
 		read_data_registers <= '0;
+		master_redgradient <= '0;
 	end else begin 
 		state <= nextState;
 		address <= nextAddress;
 		reg_index <= nextRegIndex;
 		wr_data <= nextData;
+		master_redgradient <= next_master_redgradient;
 		//read_data <= nextRead_data;
 		if(new_data_flag)
 			read_data_registers[reg_index] <= nextRead_data;
@@ -157,21 +162,23 @@ always_comb begin
 	master_read = 1'b0;
 	master_writedata = 32'h0;
 	master_address = 32'hbad1bad1;
+	master_redgradient = 8'b00000000;
+	next_master_redgradient = master_redgradient;
 
 	case(state) 
 		WRITE : begin 
 			master_write = 1;
 			master_address =  address;
 			master_writedata = //address;
-				{8'h00,
-				rdwr_address[2],rdwr_address[2],rdwr_address[2],rdwr_address[2],
-				rdwr_address[2],rdwr_address[2],rdwr_address[2],rdwr_address[2],
+			
+				{8'h00, master_redgradient,
 				
 				rdwr_address[1],rdwr_address[1],rdwr_address[1],rdwr_address[1],
 				rdwr_address[1],rdwr_address[1],rdwr_address[1],rdwr_address[1],
 				
 				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0],
 				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0]};
+				next_master_redgradient = (master_redgradient + 1'b1) % 256; 
 		end 
 		READ_REQ : begin 
 			master_address = address;
