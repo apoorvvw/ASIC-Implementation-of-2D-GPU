@@ -42,51 +42,60 @@ module alpha_blend
 	
 ); 
 	logic [3:0]alpha;
-	reg [11:0]temp1, temp2;
+	wire [11:0]temp1, temp2;
 	assign alpha = alpha_value;
-	reg [31:0] i,next_i,j;
-	reg [7:0] color1, color2;
+	
+	reg [31:0] j, next_j;
+	wire [7:0] color1, color2;
 	reg [(ADDR_SIZE_BITS-1):0] currentaddress, nextaddress;
-	typedef enum logic [3:0] {IDLE, READ1, WAIT1, READ2, WAIT2,BLEND, WAIT3, WAIT4, UPDATE, DONE} 
+	typedef enum logic [3:0] {IDLE, READ1, WAIT1, READ2, WAIT2, INITIAL, BLEND, COUNTER, WAIT3, WAIT4, UPDATE, DONE} 
 	state_type;
 	state_type state, next_state;
 	reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] data1, next_data1, data2, next_data2;
+	reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] next_write_data;
 	always_ff @ (posedge clk, negedge n_rst)
 	begin
 		if(n_rst == 0)
 		begin
 			state <= IDLE;   
-			i <= '0; 
+			j <= '0; 
 			data1 <= '0;
 			data2 <= '0;
 			currentaddress <= '0;
+			write_data <= '0;
 
 		end
 		else
 		begin
 			state <= next_state;	    
-			i <= next_i;
+			j <= next_j;
 			data1 <= next_data1;
 			data2 <= next_data2;
 			currentaddress <= nextaddress;
+			write_data <= next_write_data;
 			
 		end
 	end
 	
+	assign color1 = data1[(j * 8)+: 8];
+	assign color2 = data2[(j * 8)+: 8];
+	assign temp1 = color1 * alpha;
+	assign temp2 = color2 * (4'd10 - alpha);
 	
 	always_comb
 	begin
 		next_state = state;
-		next_i = i;
+		next_j = j;
 		alpha_done = 0;
 		read_enable = 0;
 		write_enable = 0;
 		address = 0;
 		next_data1 = data1;
 		next_data2 = data2;
+		next_write_data = write_data;
 		nextaddress = currentaddress;
-		temp1 = '0;
-		temp2 = '0;
+
+
 		case(state)
 		IDLE: begin
 			if(alpha_en)
@@ -114,30 +123,34 @@ module alpha_blend
 		
 		WAIT2: begin
 			next_data2 = read_data;
+			next_state = INITIAL;
+		end
+		
+		INITIAL: begin
+			next_j = 0;
+			next_write_data = '0;
 			next_state = BLEND;
 		end
-
 		BLEND: begin
-			
-			for(j = 0;j < 192;j++)
+			if(color1 == color2)
 			begin
-				color1 = data1[(j * 8)+: 8];
-				color2 = data2[(j * 8)+: 8];
-
-				if(color1 == color2)
-				begin
-					write_data[(j * 8)+: 8] = color1;
-				end
-				else
-				begin
-					temp1 = color1 * alpha;
-					temp2 = color2 * (4'd10 - alpha);
-					write_data[(j * 8)+: 8] = temp1/ 4'd10 + temp2/ 4'd10;
-				end
-
-			end	
-			next_state = WAIT3;
+				next_write_data[(j * 8)+: 8] = color1;
+			end
+			else
+			begin
+				next_write_data[(j * 8)+: 8] = temp1/ 4'd10 + temp2/ 4'd10;
+			end
+			next_j = j + 1;
+			next_state = COUNTER;
 		end
+		
+		COUNTER: begin
+			if(j == 192)
+				next_state = WAIT3;
+			else
+				next_state = BLEND;
+		end
+		
 		WAIT3: begin
 		    address = currentaddress + 24'd143360;
 		    write_enable = 1;	
