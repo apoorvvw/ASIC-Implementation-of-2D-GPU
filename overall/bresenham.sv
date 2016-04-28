@@ -7,7 +7,8 @@
 // Description: Bresenham
 
 
-module bresenham(
+module bresenham
+(
 	input wire clk,
 	input wire n_rst,
 	input wire [7:0] x0,
@@ -91,6 +92,11 @@ module bresenham(
 		nextETwo = currentETwo;
 		nextX = currentX;
 		nextY = currentY;
+		currentX = x0_mod;
+		currentY = y0_mod;
+		currentErr = deltaX - deltaY;
+		currentETwo = 2 * currentErr;
+		
 		case(current_state)
 		
 			IDLE: begin
