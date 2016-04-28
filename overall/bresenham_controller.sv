@@ -44,6 +44,8 @@ module bresenham_controller
 		x1 = '0;
 		y1 = '0;
 		next_state = state;
+		min_x = '0;
+		min_y = '0;
 		case (state)
 		IDLE: begin
 			draw_en = 1'b0;
