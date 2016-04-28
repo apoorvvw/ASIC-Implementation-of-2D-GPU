@@ -176,18 +176,81 @@ module tb_overall();
 			if(tb_fill_done == 1'b1)
 				break;
 		end
-		#TB_CLK_PERIOD;
 		
 		tb_fifo_empty = 1'b0;
-		x0 = 8'd32;
-		y0 = 8'd0;
-		x1 = 8'd20;
-		y1 = 8'd20;
-		x2 = 8'd44;
-		y2 = 8'd20;
+		x0 = 8'd40;
+		y0 = 8'd40;
+		x1 = 8'd100;
+		y1 = 8'd40;
+		x2 = 8'd100;
+		y2 = 8'd100;
 		alpha_val = '0;
 		texture_code = '0;
 		color_code = 24'hFF0000;
+		layer_num = 1'b0;
+		vertice_num = 1'b1;
+		inst_type = 1'b0;
+		fill_type = 1'b0;
+		tb_fifo_data = {alpha_val, texture_code, color_code, fill_type, layer_num, y2, x2, y1, x1, y0, x0, vertice_num, inst_type};
+		#TB_CLK_PERIOD;
+		#TB_CLK_PERIOD;
+		while(1 == 1)
+		begin
+			#TB_CLK_PERIOD;
+			if(tb_bla_done == 1'b1)
+				break;
+				
+		end
+		#TB_CLK_PERIOD;
+		while(1 == 1)
+		begin
+			#TB_CLK_PERIOD;
+			if(tb_fill_done == 1'b1)
+				break;
+		end
+		
+		tb_fifo_empty = 1'b0;
+		x0 = 8'd40;
+		y0 = 8'd40;
+		x1 = 8'd40;
+		y1 = 8'd100;
+		x2 = 8'd100;
+		y2 = 8'd100;
+		alpha_val = '0;
+		texture_code = '0;
+		color_code = 24'hFF0000;
+		layer_num = 1'b0;
+		vertice_num = 1'b1;
+		inst_type = 1'b0;
+		fill_type = 1'b0;
+		tb_fifo_data = {alpha_val, texture_code, color_code, fill_type, layer_num, y2, x2, y1, x1, y0, x0, vertice_num, inst_type};
+		#TB_CLK_PERIOD;
+		#TB_CLK_PERIOD;
+		while(1 == 1)
+		begin
+			#TB_CLK_PERIOD;
+			if(tb_bla_done == 1'b1)
+				break;
+				
+		end
+		#TB_CLK_PERIOD;
+		while(1 == 1)
+		begin
+			#TB_CLK_PERIOD;
+			if(tb_fill_done == 1'b1)
+				break;
+		end
+		
+		tb_fifo_empty = 1'b0;
+		x0 = 8'd60;
+		y0 = 8'd70;
+		x1 = 8'd120;
+		y1 = 8'd70;
+		x2 = 8'd60;
+		y2 = 8'd120;
+		alpha_val = '0;
+		texture_code = '0;
+		color_code = 24'h0000FF;
 		layer_num = 1'b1;
 		vertice_num = 1'b1;
 		inst_type = 1'b0;
