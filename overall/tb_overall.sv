@@ -44,6 +44,21 @@ module tb_overall();
 	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_read_data;		// The data read from the SRAM
 	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_write_data;	// The data to be written to the SRAM
 		
+	
+	reg tb_read_enable1;		// Active high read enable for the SRAM
+	reg tb_write_enable1;	// Active high write enable for the SRAM
+	
+	reg [(TB_ADDR_SIZE_BITS - 1):0]		tb_address1; 		// The address of the first word in the access
+	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_read_data1;		// The data read from the SRAM
+	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_write_data1;	// The data to be written to the SRAM
+	
+	reg tb_read_enable2;		// Active high read enable for the SRAM
+	reg tb_write_enable2;	// Active high write enable for the SRAM
+	
+	reg [(TB_ADDR_SIZE_BITS - 1):0]		tb_address2; 		// The address of the first word in the access
+	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_read_data2;		// The data read from the SRAM
+	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_write_data2;	// The data to be written to the SRAM
+	
 	reg tb_clk;
     reg tb_n_rst;
     reg [81:0] tb_fifo_data;
@@ -55,8 +70,8 @@ module tb_overall();
     reg tb_fill_done;
     reg tb_alpha_done;
 
-	
-
+	integer texture_i;
+	reg tb_init;
 	reg [7:0] x0;
 	reg [7:0] y0;
 	reg [7:0] x1;
@@ -78,6 +93,25 @@ module tb_overall();
 		#(TB_CLK_PERIOD / 2.0);
     end
     
+	multiplexer2 MUX2
+	(	
+		.init(tb_init),
+		
+		.f_read_enable(tb_read_enable),
+		.f_write_enable(tb_write_enable),
+		.f_address(tb_address),
+		.f_write_data(tb_write_data),
+		.a_read_enable(tb_read_enable2),
+		.a_write_enable(tb_write_enable2),
+		.a_address(tb_address2),
+		.a_write_data(tb_write_data2),
+		
+		.read_enable(tb_read_enable1),
+		.write_enable(tb_write_enable1),
+		.address(tb_address1),
+		.write_data(tb_write_data1)
+	
+	);
 	
     on_chip_sram_wrapper SRAM
 	(
@@ -90,11 +124,11 @@ module tb_overall();
 		.last_address(tb_last_address),
 		.verbose(tb_verbose),
 		
-		.read_enable(tb_read_enable),
-		.write_enable(tb_write_enable),
-		.address(tb_address),
+		.read_enable(tb_read_enable1),
+		.write_enable(tb_write_enable1),
+		.address(tb_address1),
 		.read_data(tb_read_data),
-		.write_data(tb_write_data)
+		.write_data(tb_write_data1)
 
 	);
 	
@@ -126,6 +160,7 @@ module tb_overall();
 		tb_n_rst = 1'b0;
     	#TB_CLK_PERIOD;
 		tb_n_rst = 1'b1;
+		tb_init =1;
     	#TB_CLK_PERIOD;
 		//Initial signals here 
 		x0 = 8'd10;
@@ -151,8 +186,27 @@ module tb_overall();
 		tb_dump_file_number	<= 0;//default, do not change its value
 		tb_start_address		<= 0;//default, do not change its value
 		tb_last_address			<= 0;//default, do not change its value
+		
 		#(TB_CLK_PERIOD * 10);
-	
+
+		
+		// Test Memory Initialization feature
+		$info("Testing Memory Initialziation Feature");
+		tb_mem_init					<= 1;
+		tb_init_file_number	<= 0;
+		#TB_CLK_PERIOD;
+		
+		tb_mem_init	<= 0;
+		
+		for ( texture_i = 131072 ; texture_i < 143360; texture_i ++ ) begin
+			tb_read_enable2	<= 1;
+			tb_address2			<= texture_i;
+			#TB_CLK_PERIOD;
+		end
+			
+		tb_init = 0;
+		
+		#TB_CLK_PERIOD;
 		//testcases here
 		tb_config_in = 1'b1;
 		#TB_CLK_PERIOD;
@@ -778,7 +832,41 @@ module tb_overall();
 			if(tb_fill_done == 1'b1)
 				break;
 		end		
-							
+		
+		tb_fifo_empty = 1'b0;
+				
+		x0 = 8'd150;
+		y0 = 8'd150;
+		x1 = 8'd210;
+		y1 = 8'd210;
+		x2 = 8'd150;
+		y2 = 8'd210;
+		alpha_val = '0;
+		texture_code = 0;
+		color_code = 24'h00FF00;
+		layer_num = 1'b1;
+		vertice_num = 1'b1;
+		inst_type = 1'b0;
+		fill_type = 1'b1;
+		tb_fifo_data = {alpha_val, texture_code, color_code, fill_type, layer_num, y2, x2, y1, x1, y0, x0, vertice_num, inst_type};
+		#TB_CLK_PERIOD;
+		#TB_CLK_PERIOD;
+		while(1 == 1)
+		begin
+			#TB_CLK_PERIOD;
+			if(tb_bla_done == 1'b1)
+				break;
+				
+		end
+		#TB_CLK_PERIOD;
+		while(1 == 1)
+		begin
+			#TB_CLK_PERIOD;
+			if(tb_fill_done == 1'b1)
+				break;
+		end		
+			
+						
 		tb_fifo_empty = 1'b0;
 		x0 = '0;
 		y0 = '0;
