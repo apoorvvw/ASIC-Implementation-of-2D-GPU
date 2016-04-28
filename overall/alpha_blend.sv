@@ -47,7 +47,7 @@ module alpha_blend
 	reg [31:0] i,next_i,j;
 	reg [7:0] color1, color2;
 	reg [(ADDR_SIZE_BITS-1):0] currentaddress, nextaddress;
-	typedef enum logic [3:0] {IDLE, READ1, WAIT5, WAIT1, READ2, WAIT6, WAIT2, WAIT7,BLEND, WAIT3, WAIT4, UPDATE, DONE} 
+	typedef enum logic [3:0] {IDLE, READ1, WAIT1, READ2, WAIT2,BLEND, WAIT3, WAIT4, UPDATE, DONE} 
 	state_type;
 	state_type state, next_state;
 	reg [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] data1, next_data1, data2, next_data2;
@@ -99,13 +99,8 @@ module alpha_blend
 			end else begin
 				address = currentaddress;
 				read_enable = 1'b1;
-				next_state = WAIT5;
+				next_state = WAIT1;
 			end
-		end
-		WAIT5: begin
-			address = currentaddress;
-			read_enable = 1'b1;
-			next_state = WAIT1;
 		end
 		WAIT1: begin
 			next_data1 = read_data;
@@ -114,20 +109,14 @@ module alpha_blend
 		READ2: begin
 			address = currentaddress + 24'd65536;
 			read_enable = 1'b1;
-			next_state = WAIT6;
-		end
-		WAIT6: begin
-			address = currentaddress + 24'd65536;
-			read_enable = 1'b1;
 			next_state = WAIT2;
 		end
+		
 		WAIT2: begin
 			next_data2 = read_data;
-			next_state = WAIT7;
-		end
-		WAIT7: begin
 			next_state = BLEND;
 		end
+
 		BLEND: begin
 			
 			for(j = 0;j < 192;j++)
