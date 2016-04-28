@@ -92,7 +92,9 @@ module bresenham
 		nextETwo = currentETwo;
 		nextX = currentX;
 		nextY = currentY;
-		
+		line_buffer = '0;
+		picture ='0;
+		done = 1'b0;
 		case(current_state)
 		
 			IDLE: begin
@@ -176,12 +178,11 @@ module bresenham
 				next_state = IDLE;
 				done = 1'b1;
 			end
-			default: 
+			default:
 			begin
-				nextX = x0_mod;
-				nextY = y0_mod;
-				nextErr = deltaX - deltaY;
-				nextETwo = 2 * currentErr;
+				line_buffer = '0;
+				picture ='0;
+				done = 1'b0;
 			end
 		endcase
 		//OUTPUT LOGIC
