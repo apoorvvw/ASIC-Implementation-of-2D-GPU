@@ -42,7 +42,7 @@ module fill
     reg [23:0]currentaddress, nextaddress;
     logic [((WORD_SIZE_BYTES * DATA_SIZE_WORDS * 8) - 1):0] next_write_data;
     reg [63:0] lineline;
-    typedef enum logic [3:0] {IDLE, MATH, READ, WAIT1, FIND1,INITIAL,FIND2,COUNTER,FILL, WAIT2, UPDATE, DONE} 
+    typedef enum logic [3:0] {IDLE, MATH, READ, WAIT1, FIND1,INITIAL,FIND2,FILL, WAIT2, UPDATE, DONE} 
 	state_type;
 	state_type state, next_state;
    
@@ -58,7 +58,7 @@ module fill
 	    	state <= IDLE;
 	    	write_data <= '0;
 	    	adr1 <= 0;
-	    	adr2 <= 6'd64;
+	    	adr2 <= 0;
         end 
         else 
         begin
@@ -119,7 +119,7 @@ module fill
             if (coordinates[31:24] < nextymin)
                 nextymin = coordinates[31:24];
             if (coordinates[47:40] < nextymin)
-                nextymin = coordinates[39:32];
+                nextymin = coordinates[47:40];
     		next_state = READ;
     	end
     	
@@ -166,16 +166,12 @@ module fill
 		        next_state = FILL; 
 		    end else begin   
 				next_k = k - 1;
-		    	next_state = COUNTER;
+		    	next_state = FIND2;
+		    	if (k == 0)
+		    		next_state = FILL;
 		    end
 		end
 		
-		COUNTER: begin
-			if(k == 0)
-				next_state = FILL;
-			else
-				next_state = FIND2;
-		end
 
         
         FILL: begin
