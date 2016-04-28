@@ -19,6 +19,11 @@ module decode_block
 );
 always_comb
 begin
+	coordinates = '0;
+	alpha_val = '0;
+	texture_code = '0;
+	fill_type = '0;
+	color_code = '0;
 	inst_type = fifo_data[0];
 	if(fifo_data[0] == 1'd0) //instruction type is not alpha
 	begin
