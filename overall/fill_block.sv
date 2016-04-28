@@ -137,7 +137,12 @@ module fill_block
     
     	read_enable = 0;
     	write_enable = 0;
-		
+		address = 24'h000000;
+		nexti = i;
+		nextaddress = currentaddress;
+		next_state = state;
+		found_flag = 0;
+		fill_done = 0;
 		if(row_start)
 		begin
 			address = currentaddress;
@@ -145,12 +150,8 @@ module fill_block
 		end
 		
 
-		address = 24'h000000;
-		nexti = i;
-		nextaddress = currentaddress;
-		next_state = state;
-		found_flag = 0;
-		fill_done = 0;
+		
+
 		case(state)
         IDLE: begin
             if(fill_start)
