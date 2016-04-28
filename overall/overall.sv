@@ -118,12 +118,12 @@ module overall
 		.bla_done(bla_done) //goes to MC
 	);
 
-	fill_wrapper FW
+	fill FW
 	(
 		.clk(clk),
 		.n_rst(n_rst),
 		.fill_en(fill_en),//come from mc
-		.done(fill_done), //goes to mc
+		.fill_done(fill_done), //goes to mc
 		.fill_type(fill_type), //come from DECODE
 		.coordinates(coordinates), //come from DECODE
 		.texture_code(texture_code), //come from DECODE
