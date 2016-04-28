@@ -177,10 +177,12 @@ module bresenham
 				done = 1'b1;
 			end
 			default: 
-				currentX = x0_mod;
-				currentY = y0_mod;
-				currentErr = deltaX - deltaY;
-				currentETwo = 2 * currentErr;
+			begin
+				nextX = x0_mod;
+				nextY = y0_mod;
+				nextErr = deltaX - deltaY;
+				nextETwo = 2 * currentErr;
+			end
 		endcase
 		//OUTPUT LOGIC
 		// set pixel
