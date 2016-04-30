@@ -47,6 +47,7 @@ module custom_master_slave #(
 );
 
 
+	
 parameter START_BYTE = 32'hF00BF00B;
 parameter STOP_BYTE = 32'hDEADF00B;
 parameter SDRAM_ADDR = 32'h08000000;
@@ -63,7 +64,97 @@ logic [3:0] next_count, count;
 
 typedef enum {IDLE, WRITE, WRITE_WAIT, READ_REQ, READ_WAIT, READ_ACK, READ_DATA, WAIT} state_t;
 state_t state, nextState;
+		//SRAM
+		logic read_enable;		// Active high read enable for the SRAM
+		logic write_enable;	// Active high write enable for the SRAM
+		
+		logic [(24 - 1):0]		address; 		// The address of the first word in the access
+		logic [(1536 - 1):0]	   read_data;		// The data read from the SRAM
+		logic [(1536 - 1):0]	   write_data;	// The data to be written to the SRAM
+		
+		//MASTER
+		logic read_enable_master;		// Active high read enable for the SRAM
+		logic write_enable_master;	// Active high write enable for the SRAM
+		
+		logic [(24 - 1):0]		address_master; 		// The address of the first word in the access
+		logic [(1536 - 1):0]	   read_data_master;		// The data read from the SRAM
+		logic [(1536 - 1):0]	   write_data_master;	// The data to be written to the SRAM
+		
+		//OVERALL
+		logic read_enable_OVERALL;		// Active high read enable for the SRAM
+		logic write_enable_OVERALL;	// Active high write enable for the SRAM
+		
+		logic [(24 - 1):0]		address_OVERALL; 		// The address of the first word in the access
+		logic [(1536 - 1):0]	   read_data_OVERALL;		// The data read from the SRAM
+		logic [(1536 - 1):0]	   write_data_OVERALL;	// The data to be written to the SRAM
 
+    logic [81:0] fifo_data;
+    logic fifo_empty;
+    logic config_in;
+    logic config_done;
+    logic config_en;
+    logic bla_done;
+    logic fill_done;
+    logic alpha_done;
+	 
+	 logic init_flag_mux;
+
+overall DUT
+	(
+		.clk(clk),
+		.n_rst(reset_n),
+
+		.read_enable(read_enable),
+		.write_enable(write_enable),
+		.address(address),
+		.read_data(read_data),
+		.write_data(write_data),
+
+		.fifo_data(fifo_data),
+		.fifo_empty(fifo_empty),
+		
+		.config_in(config_in),
+		.config_done(config_done),
+		.config_en(config_en),
+		
+		.bla_done(bla_done),
+		.fill_done(fill_done),
+		.alpha_done(alpha_done)
+	);
+	
+	
+	sram SRAM
+	(	
+		.clk(clk),
+		.read_enable(read_enable),
+		.write_enable(write_enable),
+		.address(address),
+		.read_data(read_data),
+		.write_data(write_data),
+		.reset(reset)
+
+	);
+
+	multiplexer2 MUX2
+	(	
+		.init(init_flag_mux), // init =  1 for master and 0 for overall
+		
+		.f_read_enable(read_enable_OVERALL),
+		.f_write_enable(write_enable_OVERALL),
+		.f_address(address_OVERALL),
+		.f_write_data(write_data_OVERALL),
+		
+		.a_read_enable(read_enable_master),
+		.a_write_enable(write_enable_master),
+		.a_address(address_master),
+		.a_write_data(write_data_master),
+		
+		.read_enable(read_enable),
+		.write_enable(write_enable),
+		.address(address),
+		.write_data(write_data)
+	
+	);
 // Slave side 
 always_ff @ ( posedge clk ) begin 
   if(!reset_n)
@@ -137,7 +228,7 @@ always_comb begin
 			if (!master_waitrequest) begin
 				nextState = WAIT;
 				nextRegIndex = reg_index + 1;
-				nextAddress = (address == 32'h0812C000 ) ? SDRAM_ADDR : address + 4;				
+				nextAddress = (address == 32'h0812C000 ) ? SDRAM_ADDR : address + 4;		//  CHNAGE		
 			end
 		end 
 		WAIT:
@@ -182,8 +273,15 @@ always_comb begin
 				
 				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0],
 				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0]};
+				
 				if(count > 4'd10)
 				begin
+				
+					init_flag_mux = 1;
+					address_master = master_address;  // SRAM address = master address
+					read_enable_master = 1;					
+					master_writedata = read_data;
+					
 					next_master_redgradient = (master_redgradient + 1'b1) % 256; 
 					next_count = 4'b0000;
 				end
@@ -285,4 +383,3 @@ assign reset_buff = 0;
 
 	);
 */
-
