@@ -51,26 +51,32 @@ module custom_master_slave #(
 parameter START_BYTE = 32'hF00BF00B;
 parameter STOP_BYTE = 32'hDEADF00B;
 parameter SDRAM_ADDR = 32'h08000000;
+parameter SRAM_ADDR = 24'd143360; 
+parameter BUFFER_END = 32'h0812C000;
+
 
 logic [MASTER_ADDRESSWIDTH-1:0] address, nextAddress;
 logic [DATAWIDTH-1:0] nextRead_data, read_data;
-logic [DATAWIDTH-1:0] nextData, wr_data;
+//logic [DATAWIDTH-1:0] nextData, wr_data;
 logic [NUMREGS-1:0][REGWIDTH-1:0] csr_registers;  		// Command and Status Registers (CSR) for custom logic 
 logic [NUMREGS-1:0] reg_index, nextRegIndex;
 logic [NUMREGS-1:0][REGWIDTH-1:0] read_data_registers;  //Store SDRAM read data for display
 logic new_data_flag;
 logic [7:0] next_master_redgradient, master_redgradient;
 logic [3:0] next_count, count;
+logic [23:0] next_sram_address, sram_address;
 
-typedef enum {IDLE, WRITE, WRITE_WAIT, READ_REQ, READ_WAIT, READ_ACK, READ_DATA, WAIT} state_t;
+typedef enum {IDLE, WRITE, WRITE_WAIT, READ_REQ, READ_WAIT, READ_ACK, READ_DATA, WAIT, READ} state_t;
 state_t state, nextState;
-		//SRAM
-		logic read_enable;		// Active high read enable for the SRAM
-		logic write_enable;	// Active high write enable for the SRAM
 		
-		logic [(24 - 1):0]		address; 		// The address of the first word in the access
-		logic [(1536 - 1):0]	   read_data;		// The data read from the SRAM
-		logic [(1536 - 1):0]	   write_data;	// The data to be written to the SRAM
+		//SRAM
+		logic read_enable_SRAM;		// Active high read enable for the SRAM
+		logic write_enable_SRAM;	// Active high write enable for the SRAM
+		
+		logic [(24 - 1):0]		address_SRAM; 		// The address of the first word in the access
+		logic [(1536 - 1):0]	   read_data_SRAM;		// The data read from the SRAM
+		logic [(1536 - 1):0]	   write_data_SRAM;	// The data to be written to the SRAM		
+		logic reset_SRAM;
 		
 		//MASTER
 		logic read_enable_master;		// Active high read enable for the SRAM
@@ -87,7 +93,7 @@ state_t state, nextState;
 		logic [(24 - 1):0]		address_OVERALL; 		// The address of the first word in the access
 		logic [(1536 - 1):0]	   read_data_OVERALL;		// The data read from the SRAM
 		logic [(1536 - 1):0]	   write_data_OVERALL;	// The data to be written to the SRAM
-
+/*
     logic [81:0] fifo_data;
     logic fifo_empty;
     logic config_in;
@@ -96,19 +102,52 @@ state_t state, nextState;
     logic bla_done;
     logic fill_done;
     logic alpha_done;
-	 
+	*/ 
 	 logic init_flag_mux;
+	 
+	 //FIFO signals
+	logic [81:0] fifo_data;
+	logic fifo_empty;
+	
+	//config signals
+	logic config_in;
+	logic config_done;
+	
+	logic config_en;
+	
+	logic bla_done;
+	logic fill_done;
+	logic alpha_done;
+
+
+	reg [47:0] coordinates;
+	reg [3:0] alpha_val;
+	reg [1:0] texture_code;
+	reg [23:0] color_code;
+	reg layer_num;
+	reg vertice_num;
+	reg inst_type;
+	reg fill_type;
+	
+	
+	reg read_en;
+	reg alpha_en;
+	reg bla_en;
+	reg fill_en;
+
+
 
 overall DUT
 	(
 		.clk(clk),
 		.n_rst(reset_n),
 
-		.read_enable(read_enable),
-		.write_enable(write_enable),
-		.address(address),
-		.read_data(read_data),
-		.write_data(write_data),
+		.read_enable(read_enable_SRAM),
+		.write_enable(write_enable_SRAM),
+		.address(address_SRAM),
+		.read_data(read_data_SRAM),
+		.write_data(write_data_SRAM),
+		.reset(reset_SRAM),
 
 		.fifo_data(fifo_data),
 		.fifo_empty(fifo_empty),
@@ -126,12 +165,12 @@ overall DUT
 	sram SRAM
 	(	
 		.clk(clk),
-		.read_enable(read_enable),
-		.write_enable(write_enable),
-		.address(address),
-		.read_data(read_data),
-		.write_data(write_data),
-		.reset(reset)
+		.read_enable(read_enable_SRAM),
+		.write_enable(write_enable_SRAM),
+		.address(address_SRAM),
+		.read_data(read_data_SRAM),
+		.write_data(write_data_SRAM),
+		.reset(reset_SRAM)
 
 	);
 
@@ -155,6 +194,9 @@ overall DUT
 		.write_data(write_data)
 	
 	);
+
+	assign fifo_data = {csr_registers[0], csr_registers[1], csr_registers[2][31:14]};
+
 // Slave side 
 always_ff @ ( posedge clk ) begin 
   if(!reset_n)
@@ -187,16 +229,17 @@ always_ff @ ( posedge clk ) begin
 		address <= SDRAM_ADDR;
 		reg_index <= 0;
 		state <= IDLE;
-		wr_data <= 0 ;
+		//wr_data <= 0 ;
 		read_data <= 32'hFEEDFEED; 
 		read_data_registers <= '0;
 		master_redgradient <= '0;
+		sram_address = SRAM_ADDR;
 		count <= '0; 
 	end else begin 
 		state <= nextState;
 		address <= nextAddress;
 		reg_index <= nextRegIndex;
-		wr_data <= nextData;
+	//	wr_data <= nextData;
 		master_redgradient <= next_master_redgradient;
 		count <= next_count; 
 		//read_data <= nextRead_data;
@@ -213,26 +256,69 @@ always_comb begin
 	nextAddress = address;
 	nextRegIndex = reg_index;
 	//nextData = wr_data;
+	next_sram_address = sram_address;
 	nextRead_data = master_readdata;
 	new_data_flag = 0;
+	next_count = 0; 
+	address_master = SRAM_ADDR;
+	init_flag_mux = 0;
+	read_enable_master = 0;
 	case( state ) 
 		IDLE : begin 
-			if ( rdwr_cntl && add_data_sel) begin 
-				nextState = WRITE;
-				//nextData = wr_data;
+			next_count = 0;
+			if ( rdwr_cntl && add_data_sel) begin 	
+				if (alpha_done)
+					nextState = READ;
+				else
+					nextState = IDLE;				
 			end else if ( rdwr_cntl && !add_data_sel) begin 
 				nextState = READ_REQ; 				
 			end
 		end 
-		WRITE: begin
-			if (!master_waitrequest) begin
+		
+		READ: begin
+			init_flag_mux = 1;
+			address_master = sram_address; // Read the SRAM from this address 
+									// Returns 64 pixels 
+			if(sram_address != 24'd208895) begin 	
+				read_enable_master = 1;
 				nextState = WAIT;
-				nextRegIndex = reg_index + 1;
-				nextAddress = (address == 32'h0812C000 ) ? SDRAM_ADDR : address + 4;		//  CHNAGE		
+				next_count =0;
+				next_sram_address = sram_address + 1'b1; 
+			end
+			else 
+			begin
+				nextState = IDLE; 
+			end 			
+		end
+		
+		WAIT: begin
+			nextState = WRITE;
+		end
+		
+		WRITE: begin
+		
+			init_flag_mux = 0;
+			read_enable_master  = 0;
+			
+			
+			if (!master_waitrequest) begin
+				if (count == 64) begin				
+					if ( address == BUFFER_END ) // Initiallizze BUFFER_END
+						nextState = IDLE;
+					else	
+						nextState = READ;
+				end
+				else begin
+					nextState = WRITE;							
+					nextRegIndex = reg_index + 1'b1;
+					nextAddress = address + 256;		//  NOT SURE
+					next_count = count + 1;
+				end
 			end
 		end 
-		WAIT:
-			nextState = rdwr_address [4] ? WAIT : IDLE;
+		
+		
 		READ_REQ : begin 
 			if (!master_waitrequest) begin
 				nextState = READ_DATA;
@@ -255,42 +341,16 @@ always_comb begin
 	master_write = 1'b0;
 	master_read = 1'b0;
 	master_writedata = 32'h0;
-	master_address = 32'hbad1bad1;
+	master_address = 26'b0;
 	//master_redgradient = 8'b00000000;
 	next_master_redgradient = master_redgradient;
-	next_count = count;
 
 	case(state) 
 		WRITE : begin 
 			master_write = 1;
 			master_address =  address;
-			master_writedata = //address;
-			
-				{8'h00, master_redgradient,
-				
-				rdwr_address[1],rdwr_address[1],rdwr_address[1],rdwr_address[1],
-				rdwr_address[1],rdwr_address[1],rdwr_address[1],rdwr_address[1],
-				
-				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0],
-				rdwr_address[0],rdwr_address[0],rdwr_address[0],rdwr_address[0]};
-				
-				if(count > 4'd10)
-				begin
-				
-					init_flag_mux = 1;
-					address_master = master_address;  // SRAM address = master address
-					read_enable_master = 1;					
-					master_writedata = read_data;
-					
-					next_master_redgradient = (master_redgradient + 1'b1) % 256; 
-					next_count = 4'b0000;
-				end
-				else 
-				begin 
-					next_master_redgradient = master_redgradient;
-					next_count = count + 1'b1;
-
-				end
+			master_writedata = {8'h00 , read_data[ (24*count) +: 24 ]}; // read_data has the 64 pixel so CHANGE THIS 
+			//read_data[ (24*count)- 1 : (24 * count) ]
 		end 
 		READ_REQ : begin 
 			master_address = address;
@@ -300,86 +360,3 @@ always_comb begin
 end
 
 endmodule
-
-/*
-logic vertice_num;
-logic coordinates;
-logic inst_type;
-logic alpha_done;
-logic fifo_empty;
-logic config_in;
-logic config_done;
-logic fill_type;
-logic texture_code;
-logic color_code;
-logic layer_num;
-
-	assign vertice_num = 1'b1;
-	assign coordinates = {8'd60, 8'd32, 8'd2, 8'd62, 8'd2, 8'd2};
-	assign inst_type = 1'b0;
-	assign alpha_done= 1'b0;
-	/*assign fifo_empty;
-	assign config_in;
-	assign config_done;
-	assign fill_type;
-	assign texture_code;
-	assign color_code;
-	assign layer_num;
-*/
-/*
-logic [7:0] x0 = 8'd0;
-logic [7:0] y0 = 8'd0;
-logic [7:0] x1 = 8'd10;
-logic [7:0] y1 = 8'd10;
-logic start;
-logic reset_buff;
-	
-	bresenham BR 
-	(
-		.clk(clk),
-		.n_rst(reset_n),
-		.x0(x0),
-		.y0(y0),
-		.x1(x1),
-		.y1(y1),
-		.start(start),
-		.x(x),
-		.y(y),
-		.reset_buff(reset_buff),
-		.line_buffer(line_buffer),
-		.picture(picture),
-		.done(done)
-	);
-
-assign start = !done;
-assign reset_buff = 0;
-*/
-/*
-	fill_bla_wrapper FBW
-	(
-		.clk(clk),
-		.n_rst(reset_n),
-	
-		.vertice_num(vertice_num),
-		.coordinates(coordinates),
-		.inst_type(inst_type),
-		.alpha_done(alpha_done),
-		.fifo_empty(fifo_empty),
-		.config_in(config_in),
-		.config_done(config_done),
-		.fill_type(fill_type),
-		.texture_code(texture_code),
-		.color_code(color_code),
-		.layer_num(layer_num),
-		
-		.read_enable(read_enable),
-		.write_enable(write_enable),
-		.address(address),
-		.read_data(read_data),
-		.write_data(write_data),
-		.fill_done(fill_done),
-		.bla_done(bla_done),
-		.line_buffer(line_buffer)
-
-	);
-*/
