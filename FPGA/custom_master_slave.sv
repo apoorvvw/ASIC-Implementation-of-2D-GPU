@@ -1,175 +1,362 @@
-// $Id: $
-// File name:   sram.sv
-// Created:     5/24/2016
-// Author:      Apoorv Vijay Wairagade
-// Lab Section: 5
-// Version:     1.0  Initial Design Entry
-// Description: A simple on-chip sram.
- 
+// custom_master_slave module : Acts as an avalon slave to receive input commands from PCIE IP
 
-module sram (
+module custom_master_slave #(
+	parameter MASTER_ADDRESSWIDTH = 26 ,  	// ADDRESSWIDTH specifies how many addresses the Master can address 
+	parameter SLAVE_ADDRESSWIDTH = 3 ,  	// ADDRESSWIDTH specifies how many addresses the slave needs to be mapped to. log(NUMREGS)
+	parameter DATAWIDTH = 32 ,    		// DATAWIDTH specifies the data width. Default 32 bits
+	parameter NUMREGS = 8 ,       		// Number of Internal Registers for Custom Logic
+	parameter REGWIDTH = 32       		// Data Width for the Internal Registers. Default 32 bits
+)	
+(	
+	input logic  clk,
+        input logic  reset_n,
+	
+	// Interface to Top Level
+	input logic rdwr_cntl,//SW[17]
+	input logic n_action,// Trigger the Read or Write. Additional control to avoid continuous transactions. Not a required signal. Can and should be removed for actual application.
+	input logic add_data_sel,//SW[16]
+	input logic [MASTER_ADDRESSWIDTH-1:0] rdwr_address,//SW[15:0]
+	output logic [DATAWIDTH-1:0] display_data,
 
-	input clk,
-	input [((64*24) - 1):0] write_data,
-	input [(24 - 1):0] address,
-	input write_enable,
-	input read_enable,	
-	input reset,
+	//17 enable
+	//16 1=write 0=read
+	//15-0 unassigned
 
-	output reg [(64*24 - 1):0] read_data
+	// Bus Slave Interface
+        input logic [SLAVE_ADDRESSWIDTH-1:0] slave_address,
+        input logic [DATAWIDTH-1:0] slave_writedata,
+        input logic  slave_write,
+        input logic  slave_read,
+        input logic  slave_chipselect,
+//      input logic  slave_readdatavalid,// These signals are for variable latency reads. 
+//	output logic slave_waitrequest,// See the Avalon Specifications for details  on how to use them.
+        output logic [DATAWIDTH-1:0] slave_readdata,
+
+	// Bus Master Interface
+        output logic [MASTER_ADDRESSWIDTH-1:0] master_address,
+        output logic [DATAWIDTH-1:0] master_writedata,
+        output logic  master_write,
+        output logic  master_read,
+
+       
+        input logic [DATAWIDTH-1:0] master_readdata,
+        input logic  master_readdatavalid,
+        input logic  master_waitrequest
+	
+		  
 );
-	reg [208895:0][((8*3)-1):0]mem ;
-	integer i;
-	always @ (posedge clk) begin
-		if (reset) begin
-			mem = '1;
+
+
+	
+parameter START_BYTE = 32'hF00BF00B;
+parameter STOP_BYTE = 32'hDEADF00B;
+parameter SDRAM_ADDR = 32'h08000000;
+parameter SRAM_ADDR = 24'd143360; 
+parameter BUFFER_END = 32'h0812C000;
+
+
+logic [MASTER_ADDRESSWIDTH-1:0] address, nextAddress;
+logic [DATAWIDTH-1:0] nextRead_data, read_data;
+//logic [DATAWIDTH-1:0] nextData, wr_data;
+logic [NUMREGS-1:0][REGWIDTH-1:0] csr_registers;  		// Command and Status Registers (CSR) for custom logic 
+logic [NUMREGS-1:0] reg_index, nextRegIndex;
+logic [NUMREGS-1:0][REGWIDTH-1:0] read_data_registers;  //Store SDRAM read data for display
+logic new_data_flag;
+logic [7:0] next_master_redgradient, master_redgradient;
+logic [3:0] next_count, count;
+logic [23:0] next_sram_address, sram_address;
+
+typedef enum {IDLE, WRITE, WRITE_WAIT, READ_REQ, READ_WAIT, READ_ACK, READ_DATA, WAIT, READ} state_t;
+state_t state, nextState;
+		
+		//SRAM
+		logic read_enable_SRAM;		// Active high read enable for the SRAM
+		logic write_enable_SRAM;	// Active high write enable for the SRAM
+		
+		logic [(24 - 1):0]		address_SRAM; 		// The address of the first word in the access
+		logic [(1536 - 1):0]	   read_data_SRAM;		// The data read from the SRAM
+		logic [(1536 - 1):0]	   write_data_SRAM;	// The data to be written to the SRAM		
+		logic reset_SRAM;
+		
+		//MASTER
+		logic read_enable_master;		// Active high read enable for the SRAM
+		logic write_enable_master;	// Active high write enable for the SRAM
+		
+		logic [(24 - 1):0]		address_master; 		// The address of the first word in the access
+		logic [(1536 - 1):0]	   read_data_master;		// The data read from the SRAM
+		logic [(1536 - 1):0]	   write_data_master;	// The data to be written to the SRAM
+		
+		//OVERALL
+		logic read_enable_OVERALL;		// Active high read enable for the SRAM
+		logic write_enable_OVERALL;	// Active high write enable for the SRAM
+		
+		logic [(24 - 1):0]		address_OVERALL; 		// The address of the first word in the access
+		logic [(1536 - 1):0]	   read_data_OVERALL;		// The data read from the SRAM
+		logic [(1536 - 1):0]	   write_data_OVERALL;	// The data to be written to the SRAM
+/*
+    logic [81:0] fifo_data;
+    logic fifo_empty;
+    logic config_in;
+    logic config_done;
+    logic config_en;
+    logic bla_done;
+    logic fill_done;
+    logic alpha_done;
+	*/ 
+	 logic init_flag_mux;
+	 
+	 //FIFO signals
+	logic [81:0] fifo_data;
+	logic fifo_empty;
+	
+	//config signals
+	logic config_in;
+	logic config_done;
+	
+	logic config_en;
+	
+	logic bla_done;
+	logic fill_done;
+	logic alpha_done;
+
+
+	reg [47:0] coordinates;
+	reg [3:0] alpha_val;
+	reg [1:0] texture_code;
+	reg [23:0] color_code;
+	reg layer_num;
+	reg vertice_num;
+	reg inst_type;
+	reg fill_type;
+	
+	
+	reg read_en;
+	reg alpha_en;
+	reg bla_en;
+	reg fill_en;
+
+
+
+overall DUT
+	(
+		.clk(clk),
+		.n_rst(reset_n),
+
+		.read_enable(read_enable_SRAM),
+		.write_enable(write_enable_SRAM),
+		.address(address_SRAM),
+		.read_data(read_data_SRAM),
+		.write_data(write_data_SRAM),
+		.reset(reset_SRAM),
+
+		.fifo_data(fifo_data),
+		.fifo_empty(fifo_empty),
+		
+		.config_in(config_in),
+		.config_done(config_done),
+		.config_en(config_en),
+		
+		.bla_done(bla_done),
+		.fill_done(fill_done),
+		.alpha_done(alpha_done)
+	);
+	
+	
+	sram SRAM
+	(	
+		.clk(clk),
+		.read_enable(read_enable_SRAM),
+		.write_enable(write_enable_SRAM),
+		.address(address_SRAM),
+		.read_data(read_data_SRAM),
+		.write_data(write_data_SRAM),
+		.reset(reset_SRAM)
+
+	);
+
+	multiplexer2 MUX2
+	(	
+		.init(init_flag_mux), // init =  1 for master and 0 for overall
+		
+		.f_read_enable(read_enable_OVERALL),
+		.f_write_enable(write_enable_OVERALL),
+		.f_address(address_OVERALL),
+		.f_write_data(write_data_OVERALL),
+		
+		.a_read_enable(read_enable_master),
+		.a_write_enable(write_enable_master),
+		.a_address(address_master),
+		.a_write_data(write_data_master),
+		
+		.read_enable(read_enable),
+		.write_enable(write_enable),
+		.address(address),
+		.write_data(write_data)
+	
+	);
+
+	assign fifo_data = {csr_registers[0], csr_registers[1], csr_registers[2][31:14]};
+
+// Slave side 
+always_ff @ ( posedge clk ) begin 
+  if(!reset_n)
+  	begin
+    		slave_readdata <= 32'h0;
+ 	      	csr_registers <= '0;
+  	end
+  else 
+  	begin
+  	  if(slave_write && slave_chipselect && (slave_address >= 0) && (slave_address < NUMREGS))
+  	  	begin
+  	  	   csr_registers[slave_address] <= slave_writedata;  // Write a value to a CSR register
+  	  	end
+  	  else if(slave_read && slave_chipselect  && (slave_address >= 0) && (slave_address < NUMREGS)) // reading a CSR Register
+  	    	begin
+       		// Send a value being requested by a master. 
+       		// If the computation is small you may compute directly and send it out to the master directly from here.
+  	    	   slave_readdata <= csr_registers[slave_address];
+  	    	end
+  	 end
+end
+
+
+
+
+// Master Side 
+
+always_ff @ ( posedge clk ) begin 
+	if (!reset_n) begin 
+		address <= SDRAM_ADDR;
+		reg_index <= 0;
+		state <= IDLE;
+		//wr_data <= 0 ;
+		read_data <= 32'hFEEDFEED; 
+		read_data_registers <= '0;
+		master_redgradient <= '0;
+		sram_address = SRAM_ADDR;
+		count <= '0; 
+	end else begin 
+		state <= nextState;
+		address <= nextAddress;
+		reg_index <= nextRegIndex;
+	//	wr_data <= nextData;
+		master_redgradient <= next_master_redgradient;
+		count <= next_count; 
+		//read_data <= nextRead_data;
+		if(new_data_flag)
+			read_data_registers[reg_index] <= nextRead_data;
+	end
+end
+
+// Next State Logic 
+// If user wants to input data and addresses using a state machine instead of signals/conditions,
+// the following code has commented lines for how this could be done.
+always_comb begin 
+	nextState = state;
+	nextAddress = address;
+	nextRegIndex = reg_index;
+	//nextData = wr_data;
+	next_sram_address = sram_address;
+	nextRead_data = master_readdata;
+	new_data_flag = 0;
+	next_count = 0; 
+	address_master = SRAM_ADDR;
+	init_flag_mux = 0;
+	read_enable_master = 0;
+	case( state ) 
+		IDLE : begin 
+			next_count = 0;
+			if ( rdwr_cntl && add_data_sel) begin 	
+				if (alpha_done)
+					nextState = READ;
+				else
+					nextState = IDLE;				
+			end else if ( rdwr_cntl && !add_data_sel) begin 
+				nextState = READ_REQ; 				
+			end
+		end 
+		
+		READ: begin
+			init_flag_mux = 1;
+			address_master = sram_address; // Read the SRAM from this address 
+									// Returns 64 pixels 
+			if(sram_address != 24'd208895) begin 	
+				read_enable_master = 1;
+				nextState = WAIT;
+				next_count =0;
+				next_sram_address = sram_address + 1'b1; 
+			end
+			else 
+			begin
+				nextState = IDLE; 
+			end 			
 		end
-		if (write_enable) begin
-			mem[address + 0] <= write_data[ (24*1) - 1 : (24 * 0) ];
-			mem[address + 1] <= write_data[ (24*2) - 1 : (24 * 1) ];
-			mem[address + 2] <= write_data[ (24*3) - 1 : (24 * 2) ];
-			mem[address + 3] <= write_data[ (24*4) - 1 : (24 * 3) ];
-			mem[address + 4] <= write_data[ (24*5) - 1 : (24 * 4) ];
-			mem[address + 5] <= write_data[ (24*6) - 1 : (24 * 5) ];
-			mem[address + 6] <= write_data[ (24*7) - 1 : (24 * 6) ];
-			mem[address + 7] <= write_data[ (24*8) - 1 : (24 * 7) ];
-			mem[address + 8] <= write_data[ (24*9) - 1 : (24 * 8) ];
-			mem[address + 9] <= write_data[ (24*10) - 1 : (24 * 9) ];
+		
+		WAIT: begin
+			nextState = WRITE;
+		end
+		
+		WRITE: begin
+		
+			init_flag_mux = 0;
+			read_enable_master  = 0;
 			
-			mem[address + 10] <= write_data[ (24*11) - 1 : (24 * 10) ];
-			mem[address + 11] <= write_data[ (24*12) - 1 : (24 * 11) ];
-			mem[address + 12] <= write_data[ (24*13) - 1 : (24 * 12) ];
-			mem[address + 13] <= write_data[ (24*14) - 1 : (24 * 13) ];
-			mem[address + 14] <= write_data[ (24*15) - 1 : (24 * 14) ];
-			mem[address + 15] <= write_data[ (24*16) - 1 : (24 * 15) ];
-			mem[address + 16] <= write_data[ (24*17) - 1 : (24 * 16) ];
-			mem[address + 17] <= write_data[ (24*18) - 1 : (24 * 17) ];
-			mem[address + 18] <= write_data[ (24*19) - 1 : (24 * 18) ];
-			mem[address + 19] <= write_data[ (24*20) - 1 : (24 * 19) ];
-
-			mem[address + 20] <= write_data[ (24*21) - 1 : (24 * 20) ];
-			mem[address + 21] <= write_data[ (24*22) - 1 : (24 * 21) ];
-			mem[address + 22] <= write_data[ (24*23) - 1 : (24 * 22) ];
-			mem[address + 23] <= write_data[ (24*24) - 1 : (24 * 23) ];
-			mem[address + 24] <= write_data[ (24*25) - 1 : (24 * 24) ];
-			mem[address + 25] <= write_data[ (24*26) - 1 : (24 * 25) ];
-			mem[address + 26] <= write_data[ (24*27) - 1 : (24 * 26) ];
-			mem[address + 27] <= write_data[ (24*28) - 1 : (24 * 27) ];
-			mem[address + 28] <= write_data[ (24*29) - 1 : (24 * 28) ];
-			mem[address + 29] <= write_data[ (24*30) - 1 : (24 * 29) ];
-
-			mem[address + 30] <= write_data[ (24*31) - 1 : (24 * 30) ];
-			mem[address + 31] <= write_data[ (24*32) - 1 : (24 * 31) ];
-			mem[address + 32] <= write_data[ (24*33) - 1 : (24 * 32) ];
-			mem[address + 33] <= write_data[ (24*34) - 1 : (24 * 33) ];
-			mem[address + 34] <= write_data[ (24*35) - 1 : (24 * 34) ];
-			mem[address + 35] <= write_data[ (24*36) - 1 : (24 * 35) ];
-			mem[address + 36] <= write_data[ (24*37) - 1 : (24 * 36) ];
-			mem[address + 37] <= write_data[ (24*38) - 1 : (24 * 37) ];
-			mem[address + 38] <= write_data[ (24*39) - 1 : (24 * 38) ];
-			mem[address + 39] <= write_data[ (24*40) - 1 : (24 * 39) ];
-
-			mem[address + 40] <= write_data[ (24*41) - 1 : (24 * 40) ];
-			mem[address + 41] <= write_data[ (24*42) - 1 : (24 * 41) ];
-			mem[address + 42] <= write_data[ (24*43) - 1 : (24 * 42) ];
-			mem[address + 43] <= write_data[ (24*44) - 1 : (24 * 43) ];
-			mem[address + 44] <= write_data[ (24*45) - 1 : (24 * 44) ];
-			mem[address + 45] <= write_data[ (24*46) - 1 : (24 * 45) ];
-			mem[address + 46] <= write_data[ (24*47) - 1 : (24 * 46) ];
-			mem[address + 47] <= write_data[ (24*48) - 1 : (24 * 47) ];
-			mem[address + 48] <= write_data[ (24*49) - 1 : (24 * 48) ];
-			mem[address + 49] <= write_data[ (24*50) - 1 : (24 * 49) ];
-
-			mem[address + 50] <= write_data[ (24*51) - 1 : (24 * 50) ];
-			mem[address + 51] <= write_data[ (24*52) - 1 : (24 * 51) ];
-			mem[address + 52] <= write_data[ (24*53) - 1 : (24 * 52) ];
-			mem[address + 53] <= write_data[ (24*54) - 1 : (24 * 53) ];
-			mem[address + 54] <= write_data[ (24*55) - 1 : (24 * 54) ];
-			mem[address + 55] <= write_data[ (24*56) - 1 : (24 * 55) ];
-			mem[address + 56] <= write_data[ (24*57) - 1 : (24 * 56) ];
-			mem[address + 57] <= write_data[ (24*58) - 1 : (24 * 57) ];
-			mem[address + 58] <= write_data[ (24*59) - 1 : (24 * 58) ];
-			mem[address + 59] <= write_data[ (24*60) - 1 : (24 * 59) ];
-			mem[address + 60] <= write_data[ (24*61) - 1 : (24 * 60) ];
-
-			mem[address + 61] <= write_data[ (24*62) - 1 : (24 * 61) ];
-			mem[address + 62] <= write_data[ (24*63) - 1 : (24 * 62) ];
-			mem[address + 63] <= write_data[ (24*64) - 1 : (24 * 63) ];
-
+			
+			if (!master_waitrequest) begin
+				if (count == 64) begin				
+					if ( address == BUFFER_END ) // Initiallizze BUFFER_END
+						nextState = IDLE;
+					else	
+						nextState = READ;
+				end
+				else begin
+					nextState = WRITE;							
+					nextRegIndex = reg_index + 1'b1;
+					nextAddress = address + 256;		//  NOT SURE
+					next_count = count + 1;
+				end
+			end
+		end 
+		
+		
+		READ_REQ : begin 
+			if (!master_waitrequest) begin
+				nextState = READ_DATA;
+				nextAddress = address - 4 ;	
+				nextRegIndex = reg_index - 1;
+			end
 		end
-
-		if (read_enable) begin
-				read_data[ (24*1)- 1 : (24 * 0) ] <= mem[address + 0]; // q doesn't get d in this clock cycle
-				read_data[ (24*2)- 1 : (24 * 1) ] <= mem[address + 1];
-				read_data[ (24*3)- 1 : (24 * 2) ] <= mem[address + 2];
-				read_data[ (24*4)- 1 : (24 * 3) ] <= mem[address + 3];
-				read_data[ (24*5)- 1 : (24 * 4) ] <= mem[address + 4]; 
-				read_data[ (24*6)- 1 : (24 * 5) ] <= mem[address + 5];
-				read_data[ (24*7)- 1 : (24 * 6) ] <= mem[address + 6];
-				read_data[ (24*8)- 1 : (24 * 7) ] <= mem[address + 7];
-				read_data[ (24*9)- 1 : (24 * 8) ] <= mem[address + 8];
-				read_data[ (24*10)- 1 : (24 * 9) ] <= mem[address + 9];
-
-				read_data[ (24*11)- 1 : (24 * 10) ] <= mem[address + 10];
-				read_data[ (24*12)- 1 : (24 * 11) ] <= mem[address + 11];
-				read_data[ (24*13)- 1 : (24 * 12) ] <= mem[address + 12];
-				read_data[ (24*14)- 1 : (24 * 13) ] <= mem[address + 13];
-				read_data[ (24*15)- 1 : (24 * 14) ] <= mem[address + 14];
-				read_data[ (24*16)- 1 : (24 * 15) ] <= mem[address + 15];
-				read_data[ (24*17)- 1 : (24 * 16) ] <= mem[address + 16];
-				read_data[ (24*18)- 1 : (24 * 17) ] <= mem[address + 17];
-				read_data[ (24*19)- 1 : (24 * 18) ] <= mem[address + 18];
-				read_data[ (24*20)- 1 : (24 * 19) ] <= mem[address + 19];
-
-				read_data[ (24*21)- 1 : (24 * 20) ] <= mem[address + 20];
-				read_data[ (24*22)- 1 : (24 * 21) ] <= mem[address + 21];
-				read_data[ (24*23)- 1 : (24 * 22) ] <= mem[address + 22];
-				read_data[ (24*24)- 1 : (24 * 23) ] <= mem[address + 23];
-				read_data[ (24*25)- 1 : (24 * 24) ] <= mem[address + 24];
-				read_data[ (24*26)- 1 : (24 * 25) ] <= mem[address + 25];
-				read_data[ (24*27)- 1 : (24 * 26) ] <= mem[address + 26];
-				read_data[ (24*28)- 1 : (24 * 27) ] <= mem[address + 27];
-				read_data[ (24*29)- 1 : (24 * 28) ] <= mem[address + 28];
-				read_data[ (24*30)- 1 : (24 * 29) ] <= mem[address + 29];
-
-				read_data[ (24*31)- 1 : (24 * 30) ] <= mem[address + 30];
-				read_data[ (24*32)- 1 : (24 * 31) ] <= mem[address + 31];
-				read_data[ (24*33)- 1 : (24 * 32) ] <= mem[address + 32];
-				read_data[ (24*34)- 1 : (24 * 33) ] <= mem[address + 33];
-				read_data[ (24*35)- 1 : (24 * 34) ] <= mem[address + 34];
-				read_data[ (24*36)- 1 : (24 * 35) ] <= mem[address + 35];
-				read_data[ (24*37)- 1 : (24 * 36) ] <= mem[address + 36];
-				read_data[ (24*38)- 1 : (24 * 37) ] <= mem[address + 37];
-				read_data[ (24*39)- 1 : (24 * 38) ] <= mem[address + 38];
-				read_data[ (24*40)- 1 : (24 * 39) ] <= mem[address + 39];
-
-				read_data[ (24*41)- 1 : (24 * 40) ] <= mem[address + 40];
-				read_data[ (24*42)- 1 : (24 * 41) ] <= mem[address + 41];
-				read_data[ (24*43)- 1 : (24 * 42) ] <= mem[address + 42];
-				read_data[ (24*44)- 1 : (24 * 43) ] <= mem[address + 43];
-				read_data[ (24*45)- 1 : (24 * 44) ] <= mem[address + 44];
-				read_data[ (24*46)- 1 : (24 * 45) ] <= mem[address + 45];
-				read_data[ (24*47)- 1 : (24 * 46) ] <= mem[address + 46];
-				read_data[ (24*48)- 1 : (24 * 47) ] <= mem[address + 47];
-				read_data[ (24*49)- 1 : (24 * 48) ] <= mem[address + 48];
-				read_data[ (24*50)- 1 : (24 * 49) ] <= mem[address + 49];
-
-				read_data[ (24*51)- 1 : (24 * 50) ] <= mem[address + 50];
-				read_data[ (24*52)- 1 : (24 * 51) ] <= mem[address + 51];
-				read_data[ (24*53)- 1 : (24 * 52) ] <= mem[address + 52];
-				read_data[ (24*54)- 1 : (24 * 53) ] <= mem[address + 53];
-				read_data[ (24*55)- 1 : (24 * 54) ] <= mem[address + 54];
-				read_data[ (24*56)- 1 : (24 * 55) ] <= mem[address + 55];
-				read_data[ (24*57)- 1 : (24 * 56) ] <= mem[address + 56];
-				read_data[ (24*58)- 1 : (24 * 57) ] <= mem[address + 57];
-				read_data[ (24*59)- 1 : (24 * 58) ] <= mem[address + 58];
-				read_data[ (24*60)- 1 : (24 * 59) ] <= mem[address + 59];
-
-				read_data[ (24*61)- 1 : (24 * 60) ] <= mem[address + 60];
-				read_data[ (24*62)- 1 : (24 * 61) ] <= mem[address + 61];
-				read_data[ (24*63)- 1 : (24 * 62) ] <= mem[address + 62];
-				read_data[ (24*64)- 1 : (24 * 63) ] <= mem[address + 63];
+		READ_DATA : begin
+			if ( master_readdatavalid) begin
+				nextRead_data = master_readdata;
+				nextState = IDLE;
+				new_data_flag =1;
+			end
 		end
-	end 
+	endcase
+end
+
+// Output Logic 
+always_comb begin 
+	master_write = 1'b0;
+	master_read = 1'b0;
+	master_writedata = 32'h0;
+	master_address = 26'b0;
+	//master_redgradient = 8'b00000000;
+	next_master_redgradient = master_redgradient;
+
+	case(state) 
+		WRITE : begin 
+			master_write = 1;
+			master_address =  address;
+			master_writedata = {8'h00 , read_data[ (24*count) +: 24 ]}; // read_data has the 64 pixel so CHANGE THIS 
+			//read_data[ (24*count)- 1 : (24 * count) ]
+		end 
+		READ_REQ : begin 
+			master_address = address;
+			master_read = 1;	
+		end
+	endcase
+end
 
 endmodule
