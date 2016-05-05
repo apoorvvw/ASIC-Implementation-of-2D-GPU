@@ -1,5 +1,5 @@
 // $Id: $
-// File name:   tb_bla_wrapper.sv
+// File name:   tb_main_controller.sv
 // Created:     4/21/2016
 // Author:      Shubham Rastogi
 // Lab Section: 337-04
@@ -10,25 +10,23 @@ module bla_wrapper
 (
 	input wire clk,
 	input wire n_rst,
-	
-	input wire vertice_num,
-	input wire bla_en,
-	input wire [47:0]coordinates,
-	
-	output wire [4095:0] line_buffer,
-	output wire bla_done
+	input wire vertice_num, //number of vertices to draw
+	input wire bla_en, //enable to bla wrapper
+	input wire [47:0]coordinates, //coordinates to draw
+	output wire [4095:0] line_buffer, //line buffer 
+	output wire bla_done //bla done flag to Main Controller
 );
-	wire [7:0] x0;
-	wire [7:0] x1;
-	wire [7:0] y0;
-	wire [7:0] y1;
-	wire draw_en;
-	wire draw_done;
-	wire reset_buff;
-//	wire [63:0] [63:0] picture;
+	wire [7:0] x0; //first x coordinate
+	wire [7:0] x1; //first y coordinate
+	wire [7:0] y0; //second x coordinate
+	wire [7:0] y1; //second y coordinate
+	wire draw_en; //draw enable to bla block
+	wire draw_done; //done flag from bla block
+	wire reset_buff; //reset signal to reset line buffer
+//bla port map
 bresenham BLA
 (
-	.clk(clk),
+	.clk(clk), 
 	.n_rst(n_rst),
 	.x0(x0),
 	.y0(y0),
@@ -37,10 +35,10 @@ bresenham BLA
 	.start(draw_en),
 	.reset_buff(reset_buff),
 	.line_buffer(line_buffer),
-//	.picture(picture),
 	.done(draw_done)
 );
 
+//bla controller port map
 bresenham_controller BLA_CTRL
 (
 	.clk(clk),
