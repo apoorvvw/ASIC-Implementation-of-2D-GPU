@@ -17,69 +17,62 @@ module bresenham
 	input wire [7:0] y1,
 	input wire start,
 	input wire reset_buff,
-	output reg x,
-	output reg y,
-	output reg [63:0] [63:0] picture,
 	output reg [4095:0] line_buffer,
 	output reg done
 );
 
 	//Variable declarations
 
+	logic signed [8:0]  deltaY; //absolute difference in Y coordinates
+	logic signed [8:0]  deltaX; //absolute difference in X coordinates
+	logic signed [1:0] sx; //Coordinate increment or decrement value
+	logic signed [1:0] sy; //Coordinate increment or decrement value
 
-	logic signed [8:0]  deltaY;
-	logic signed [8:0]  deltaX; 
-	logic signed [1:0] sx; 
-	logic signed [1:0] sy;
+	logic [4095:0] next_line_buffer; //Next state line buffer
+	
+	logic signed [8:0] nextErr;  //Next state error
+	logic signed [8:0] currentErr; //current error, difference of deltaX and deltaY
 
-	logic [4095:0] next_line_buffer;
-	logic [63:0] [63:0] next_picture;
-
-	logic signed [8:0] nextErr; // signed or unsigned? 
-	logic signed [8:0] currentErr;
-
-	logic signed [8:0] nextETwo; // signed or unsigned? 
-	logic signed [8:0] currentETwo;
+	logic signed [8:0] nextETwo; //next state E two
+	logic signed [8:0] currentETwo; //current E two used to decide increment in x and y
 	
-	logic signed [8:0] currentX; 
-	logic signed [8:0] nextX; 
+	logic signed [8:0] currentX; //current state X coordinate value
+	logic signed [8:0] nextX; //next state X coordinate value
 	
-	logic signed [8:0] currentY; 
-	logic signed [8:0] nextY; 
+	logic signed [8:0] currentY; //current state Y coordinate value
+	logic signed [8:0] nextY; //Next state Y coordinate value
 	
-	logic [5:0] x0_mod;
-	logic [5:0] y0_mod;
-	logic [5:0] x1_mod;
-	logic [5:0] y1_mod;
+	integer i;
 	
-	
-	integer i = 0;
-	//reg [63:0] [63:0] pic;
-	
-	typedef enum logic [2:0] {IDLE, CALC, CALC_WAIT, PROCESS, PROCESS_WAIT, RESET, DONE} state_type;
+	typedef enum logic [2:0] {IDLE, CALC, PROCESS, PROCESS_WAIT, RESET, DONE} state_type;
 	state_type next_state , current_state;
 
-	//DataFlow
-	assign x0_mod = x0 % 64;
-	assign y0_mod = y0 % 64;
-	assign x1_mod = x1 % 64;
-	assign y1_mod = y1 % 64;
-	assign deltaX = (x0_mod < x1_mod) ? (x1_mod - x0_mod) : (x0_mod - x1_mod); 
-	assign deltaY = (y0_mod < y1_mod) ? (y1_mod - y0_mod) : (y0_mod - y1_mod); 
-	assign sx =  (x0_mod < x1_mod) ? 1 : -1;
-	assign sy =  (y0_mod < y1_mod) ? 1 : -1;	
-    // State register
+	//signed coordinate
+	wire signed[8:0] x0_signed, x1_signed, y1_signed, y0_signed;
+	assign x0_signed = $signed(x0); 
+	assign x1_signed = $signed(x1);
+	assign y0_signed = $signed(y0);
+	assign y1_signed = $signed(y1);
+	
+	//calculation of deltaX, deltaY, sx and sy
+	assign deltaX = (x0_signed < x1_signed) ? (x1_signed - x0_signed) : (x0_signed - x1_signed); //has to be postive
+	assign deltaY = (y0_signed < y1_signed) ? (y1_signed - y0_signed) : (y0_signed - y1_signed); //has to be positive
+	assign sx =  (x0_signed < x1_signed) ? 1 : -1; //decrement if x0 is > x1 and vice versa
+	assign sy =  (y0_signed < y1_signed) ? 1 : -1; //decrement if y0 is > y1 and vice versa
+
 	always_ff @ ( posedge clk, negedge n_rst ) begin
 		
+		//reset to 0
 		if (n_rst == 1'b0) begin
 			current_state <= IDLE;
-			currentErr <= deltaX - deltaY; 
-			currentETwo <= 2 * currentErr; 
-			currentX <= x0_mod; 
-			currentY <= y0_mod;	
+			currentErr <= '0; 
+			currentETwo <= '0; 
+			currentX <= '0; 
+			currentY <= '0;	
 			line_buffer <= '0;
-			picture <= '0;
+
 		end
+		//next state logic
 		else begin
 			currentErr <= nextErr; 
 			currentETwo <= nextETwo; 
@@ -87,114 +80,115 @@ module bresenham
 	 		currentY <= nextY;
 	 		current_state <= next_state;
 			line_buffer <= next_line_buffer;
-			picture <= next_picture;	 	
+
 		end
 	end
 
     always_comb begin:	NEXT_STATE_LOGIC
 		
+		//default asignments
 		next_state = current_state;
 		nextErr = currentErr; 
 		nextETwo = currentETwo;
 		nextX = currentX;
 		nextY = currentY;
 		next_line_buffer = line_buffer;
-		next_picture = picture;
 		done = 1'b0;
 		case(current_state)
-		
+			//Idle state
 			IDLE: begin
+				//calculations
 				i = 0;
 				done = 1'b0;
 				nextErr = deltaX - deltaY;
-				nextX = x0_mod;
-				nextY = y0_mod;
+				nextX = x0_signed;
+				nextY = y0_signed;
+				//reset the lien buffer is reset buff is high
 				if(reset_buff == 1'b1)
 					next_state = RESET;
+				//if bla enable is high, beign calculations
 				else if (start) begin
 					next_state = CALC;
 					nextETwo = 2 * currentErr;					
 				end
+				//else stay here
 				else
 					next_state = IDLE;
 				
 			end
-			
+			//Calculation state
 			CALC:
 			begin
+				//calculate E two value
 				nextETwo = 2 * currentErr;
-				next_state = CALC_WAIT;
-			end
-			CALC_WAIT:
-			begin
 				next_state = PROCESS;
-			end			
-			
+			end
+			//BLA main logic
 			PROCESS: begin
-				next_picture[currentY][currentX] = 1'b1;
+				//Make current coordinate a 1 on buffer
 				next_line_buffer [currentY * 64 + currentX] = 1'b1;
-				if (currentX == x1_mod && currentY == y1_mod)
+				//get out of state if BLA is done
+				if (currentX == x1_signed && currentY == y1_signed)
 				begin
 					next_state = DONE;   
 				end 
+				//else continue BLA algorithm
 				else 
 				begin 
-					if((currentETwo > (-1 *deltaY)) && ($signed(currentETwo) < $signed(deltaX)) && (currentX != x1_mod) && (currentY != y1_mod))
+					//increment in Y and X
+					if((currentETwo > (-1 *deltaY)) && ($signed(currentETwo) < $signed(deltaX)) && (currentX != x1_signed) && (currentY != y1_signed))
 					begin
 						nextErr = currentErr - deltaY + deltaX;
 						nextX = $signed(currentX) + $signed(sx); 
 						nextY = $signed(currentY) + $signed(sy); 
 					end
-					else if(currentX != x1_mod && (currentETwo > (-1 *deltaY)))
+					//increment in X
+					else if(currentX != x1_signed && (currentETwo > (-1 *deltaY)))
 					begin
 						nextErr = currentErr - deltaY; 
 						nextX = $signed(currentX) + $signed(sx); 
 								
 					end 
-					else if((currentY != y1_mod) && ($signed(currentETwo) < $signed(deltaX)))
+					//increment in Y
+					else if((currentY != y1_signed) && ($signed(currentETwo) < $signed(deltaX)))
 					begin
 						nextErr = currentErr + deltaX; 
 						nextY = $signed(currentY) + $signed(sy); 
 					end
-										
+					//wait for values to be set for 1 clock cycle				
 					next_state = PROCESS_WAIT;
 					
 				end 
 
 			end
+			//wait state for 1 clock cycle
 			PROCESS_WAIT:
 			begin
+				//go to calc state again after 1 clock cycle
 				next_state = CALC;
 			end
 			
+			//if line buffer needs reset, reset the buffer
 			RESET:
 			begin
-				next_picture = 4096'd0;
-				next_line_buffer = 4096'd0;
+				next_line_buffer = 4096'd0; //reset line buffer
+				//go to idle if a enable comes				
 				if (start) begin
 					next_state = IDLE;
 					nextETwo = 2 * currentErr;					
 				end
+				// stay in reset
 				else
 					next_state = RESET;
 				
 			end
-
+			//done state
 			DONE: begin
 				next_state = IDLE;
-				done = 1'b1;
+				done = 1'b1; //done flag high for 1 cycle
 			end
 		endcase
-		//OUTPUT LOGIC
-		// set pixel
 
-		//line_buffer [ 64*currentY + currentX ] = 1'b1;
-		//start = currentY * 64 + 64;
-		//endd = currentY * 64;
-		//line_buffer[: ] ;
-				
-
-		//assert(1) $display ("%b",test);
 
 	end
 endmodule // bresenham
