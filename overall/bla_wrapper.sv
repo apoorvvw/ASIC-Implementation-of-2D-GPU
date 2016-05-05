@@ -1,5 +1,5 @@
 // $Id: $
-// File name:   tb_main_controller.sv
+// File name:   tb_bla_wrapper.sv
 // Created:     4/21/2016
 // Author:      Shubham Rastogi
 // Lab Section: 337-04
@@ -8,24 +8,24 @@
 
 module bla_wrapper
 (
-	input logic clk,
-	input logic n_rst,
-	input logic vertice_num,
-	input logic bla_en,
-	input logic [47:0]coordinates,
-	output logic [4095:0] line_buffer,
-	output logic bla_done
+	input wire clk,
+	input wire n_rst,
+	
+	input wire vertice_num,
+	input wire bla_en,
+	input wire [47:0]coordinates,
+	
+	output wire [4095:0] line_buffer,
+	output wire bla_done
 );
-	reg [7:0] x0;
-	reg [7:0] x1;
-	reg [7:0] y0;
-	reg [7:0] y1;
-	reg draw_en;
-	reg x;
-	reg y;
-	reg draw_done;
-	reg reset_buff;
-	reg [63:0] [63:0] picture;
+	wire [7:0] x0;
+	wire [7:0] x1;
+	wire [7:0] y0;
+	wire [7:0] y1;
+	wire draw_en;
+	wire draw_done;
+	wire reset_buff;
+//	wire [63:0] [63:0] picture;
 bresenham BLA
 (
 	.clk(clk),
@@ -35,11 +35,9 @@ bresenham BLA
 	.x1(x1),
 	.y1(y1),
 	.start(draw_en),
-	.x(x),
-	.y(y),
 	.reset_buff(reset_buff),
 	.line_buffer(line_buffer),
-	.picture(picture),
+//	.picture(picture),
 	.done(draw_done)
 );
 
