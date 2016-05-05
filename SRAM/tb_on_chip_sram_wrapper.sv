@@ -11,8 +11,8 @@
 module tb_on_chip_sram_wrapper ();
 	// SRAM configuation parameters (based on values set in wrapper file)
 	localparam TB_CLK_PERIOD			= 6.0;	// Read/Write delays are 5ns and need ~1 ns for wire propagation
-	localparam TB_ADDR_SIZE_BITS	= 16; 	// 16 => 64K Words in Memory
-	localparam TB_DATA_SIZE_WORDS	= 64;		// Single word access (only a demo case, can access arbitraliy many bytes during an access but all accesses must be the number of words wide)
+	localparam TB_ADDR_SIZE_BITS	= 22; 	// 16 => 64K Words in Memory
+	localparam TB_DATA_SIZE_WORDS	= 2;		// Single word access (only a demo case, can access arbitraliy many bytes during an access but all accesses must be the number of words wide)
 	localparam TB_WORD_SIZE_BYTES	= 3;		// Single byte words (only a demo case, words can be as large as 3 bytes)
 	localparam TB_ACCES_SIZE_BITS	= (TB_DATA_SIZE_WORDS * TB_WORD_SIZE_BYTES * 8);
 	
@@ -51,17 +51,8 @@ module tb_on_chip_sram_wrapper ();
 	reg [(TB_ACCES_SIZE_BITS - 1):0]	tb_write_data;	// The data to be written to the SRAM
 	
 	// Wrapper portmap
-	on_chip_sram_wrapper DUT
+	sram DUT
 	(
-		// Test bench control signals
-		.mem_clr(tb_mem_clr),
-		.mem_init(tb_mem_init),
-		.mem_dump(tb_mem_dump),
-		.verbose(tb_verbose),
-		.init_file_number(tb_init_file_number),
-		.dump_file_number(tb_dump_file_number),
-		.start_address(tb_start_address),
-		.last_address(tb_last_address),
 		// Memory interface signals
 		.read_enable(tb_read_enable),
 		.write_enable(tb_write_enable),
@@ -92,14 +83,14 @@ module tb_on_chip_sram_wrapper ();
 		#(TB_CLK_PERIOD * 10);
 		
 		// Test the write functionality
-		tb_address			<= 0;
+		tb_address			<= 9;
 		tb_write_enable	<= 1;
-		tb_write_data		<= TB_MAX_ACC;
+		tb_write_data		<= 9;
 		#TB_CLK_PERIOD;
 		
 		tb_address 			<= 8;
 		tb_write_enable	<= 1;
-		tb_write_data		<= 5;
+		tb_write_data		<= 8;
 		#TB_CLK_PERIOD;
 		
 		tb_write_enable	<= 0;
@@ -108,8 +99,10 @@ module tb_on_chip_sram_wrapper ();
 		tb_read_enable	<= 1;
 		#TB_CLK_PERIOD;
 		
-		tb_address			<= 0;
+		tb_address			<= 9;
 		tb_read_enable	<= 1;
+		#TB_CLK_PERIOD;
+		 tb_address			<= 8;
 		#TB_CLK_PERIOD;
 		
 		// Test error detection
@@ -141,6 +134,7 @@ module tb_on_chip_sram_wrapper ();
 		
 		
 		// Test Verbose signal
+		/*
 		$info("Testing Verbose Signal");
 		tb_verbose	<= 1;
 		tb_mem_clr	<= 1;
@@ -148,8 +142,10 @@ module tb_on_chip_sram_wrapper ();
 		
 		tb_mem_clr <= 0;
 		#TB_CLK_PERIOD;
+		*/
 		
 		// Test Memory Initialization feature
+		/*
 		$info("Testing Memory Initialziation Feature");
 		tb_mem_init					<= 1;
 		tb_init_file_number	<= 0;
@@ -184,7 +180,7 @@ module tb_on_chip_sram_wrapper ();
 		tb_read_enable	<= 1;
 		tb_address			<= 1024;
 		#TB_CLK_PERIOD;
-		
+		*/
 	end
 	
 endmodule
