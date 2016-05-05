@@ -4,91 +4,70 @@
 // Author:      Shubham Rastogi
 // Lab Section: 337-04
 // Version:     1.0  Initial Design Entry
-// Description: Wrapper for Alpha, fill, BLA and decode
+// Description: Wrapper for the overall design
 
 module overall
 (
-	input logic clk,
-	input logic n_rst,
+	input wire clk,
+	input wire n_rst,
 	
 	//sram signals
-	input logic [1535:0] read_data,
-	output logic [1535:0] write_data,
-	output logic [23:0] address,
-	output logic read_enable,
-	output logic write_enable,
+	input wire [1535:0] read_data,
+	output wire [1535:0] write_data,
+	output wire [18:0] address,
+	output wire read_enable,
+	output wire write_enable,
 	
 	//FIFO signals
-	input logic [81:0] fifo_data,
-	input logic fifo_empty,
+	input wire [81:0] fifo_data,
+	input wire fifo_empty,
 	
 	//config signals
-	input logic config_in,
-	input logic config_done,
-	output logic config_en,
+	input wire config_in,
+	input wire config_done,
+	output wire config_en,
 	
-	output logic bla_done,
-	output logic fill_done,
-	output logic alpha_done
+	output wire bla_done,
+	output wire fill_done,
+	output wire alpha_done
 );
+	
+	wire [47:0] coordinates;
+	wire [3:0] alpha_val;
+	wire [1:0] texture_code;
+	wire [23:0] color_code;
+	wire layer_num;
+	wire vertice_num;
+	wire inst_type;
+	wire fill_type;
 
-	reg [47:0] coordinates;
-	reg [3:0] alpha_val;
-	reg [1:0] texture_code;
-	reg [23:0] color_code;
-	reg layer_num;
-	reg vertice_num;
-	reg inst_type;
-	reg fill_type;
+	//DECODE BLOCK
+	assign inst_type = fifo_data[0];
+	assign coordinates = (fifo_data[1]) ? {fifo_data[49:34], fifo_data[33:18], fifo_data[17:2]} : {8'b0, fifo_data[33:18] ,fifo_data[17:2]};
+	assign vertice_num = fifo_data[1];
+	assign alpha_val = fifo_data[81:78];
+	assign layer_num = fifo_data[50];
+	assign fill_type = fifo_data[51];
+	assign color_code = fifo_data[75:52];
+	assign texture_code = fifo_data[77:76];
 	
-	
-	reg read_en;
-	reg alpha_en;
-	reg bla_en;
-	reg fill_en;
 
 	
+	wire read_en; 
+	wire alpha_en;
+	wire bla_en;
+	wire fill_en;
+	wire [4095:0] line_buffer;
+	wire f_read_enable;
+	wire f_write_enable;
+	wire [18:0] f_address;
+	wire [1535:0] f_write_data;
+	wire a_read_enable;
+	wire a_write_enable;
+	wire [18:0] a_address;
+	wire [1535:0] a_write_data;
 	
-	
-	
-	logic [4095:0] line_buffer;
-	
-	logic f_read_enable;
-	logic f_write_enable;
-	logic [23:0] f_address;
-	logic [1535:0] f_write_data;
-	logic a_read_enable;
-	logic a_write_enable;
-	logic [23:0] a_address;
-	logic [1535:0] a_write_data;
-
-	/*
-	shubham FFIFFO
-	(
-		.clk(clk),
-		.n_rst(n_rst),
-		.r_enable(),
-		.w_enable(),
-		.w_data(),
-		.r_data(),
-		.empty(),
-		.full()
-
-	);
-	*/	
-	decode_block DECODE
-	(
-		.fifo_data(fifo_data), 
-		.coordinates(coordinates),
-		.alpha_val(alpha_val),
-		.texture_code(texture_code),
-		.color_code(color_code),
-		.layer_num(layer_num),
-		.vertice_num(vertice_num),
-		.inst_type(inst_type),
-		.fill_type(fill_type)
-	);
-
+	//port map for the main controller
 	main_controller MC
 	(
 		.clk(clk),
@@ -106,7 +85,8 @@ module overall
 		.config_en(config_en), //goes to conf
 		.fill_en(fill_en) //goes to fill
 	);
-
+	
+	//port map for the bresenham wrapper
 	bla_wrapper BLA_W
 	(
 		.clk(clk),
@@ -118,6 +98,7 @@ module overall
 		.bla_done(bla_done) //goes to MC
 	);
 
+	//port map for the fill block
 	fill FW
 	(
 		.clk(clk),
@@ -138,35 +119,36 @@ module overall
 		.write_data(f_write_data) //goes to sram
 	);
 	
+	//port map for the alpha blend block
 	alpha_blend ALP
 	(
 		.clk(clk),
 		.n_rst(n_rst),
-	   	.alpha_en(alpha_en),
-	   	.alpha_value(alpha_val),
-	   	.alpha_done(alpha_done),
+	   	.alpha_en(alpha_en), //from main controller
+	   	.alpha_value(alpha_val), //from decode
+	   	.alpha_done(alpha_done), //to the main controller
 	   	
-	   	.read_enable(a_read_enable),
-	   	.write_enable(a_write_enable),
-	   	.address(a_address),
-		.read_data(read_data),
-		.write_data(a_write_data)
+	   	.read_enable(a_read_enable), //to the multiplexer
+	   	.write_enable(a_write_enable), //from the multiplexer
+	   	.address(a_address), //to the sram
+		.read_data(read_data), //from sram
+		.write_data(a_write_data) //to the sram
 	
 	); 
 	
+	//port map for the multiplexer
 	multiplexer MUX
 	(	
-		.alpha_en(alpha_en),
-		.fill_en(fill_en),
+		.alpha_en(alpha_en), //from main controller
 		
-		.f_read_enable(f_read_enable),
-		.f_write_enable(f_write_enable),
-		.f_address(f_address),
-		.f_write_data(f_write_data),
-		.a_read_enable(a_read_enable),
-		.a_write_enable(a_write_enable),
-		.a_address(a_address),
-		.a_write_data(a_write_data),
+		.read_enable2(f_read_enable), 
+		.write_enable2(f_write_enable),
+		.address2(f_address),
+		.write_data2(f_write_data),
+		.read_enable1(a_read_enable),
+		.write_enable1(a_write_enable),
+		.address1(a_address),
+		.write_data1(a_write_data),
 		
 		.read_enable(read_enable),
 		.write_enable(write_enable),
